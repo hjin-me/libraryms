@@ -51,7 +51,7 @@ $RECYCLE.BIN/
 
 /target
 .fleet/
-data/
+/data/
 config.toml
 
 

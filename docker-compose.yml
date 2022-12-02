@@ -1,0 +1,20 @@
+version: "3"
+services:
+  openldap:
+    image: bitnami/openldap:2
+    ports:
+      - '1389:1389'
+      - '1636:1636'
+    environment:
+      - LDAP_ADMIN_USERNAME=admin
+      - LDAP_ADMIN_PASSWORD=adminpassword
+      - LDAP_USERS=usera,user01,user02,user03
+      - LDAP_PASSWORDS=1111,password1,password2,password3
+      - LDAP_ROOT=dc=example,dc=org
+  db:
+    image: postgres:12
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: example
+    ports:
+      - '5432:5432'
