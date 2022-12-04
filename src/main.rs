@@ -3,7 +3,7 @@ mod data;
 
 use crate::data::ldap::LdapIdent;
 use clap::Parser;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::fs;
 use toml;
 use tracing::{info, Level};

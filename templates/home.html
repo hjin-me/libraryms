@@ -1,0 +1,27 @@
+<html lang="zh-Hans">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://unpkg.com/htmx.org@1.8.4"
+            integrity="sha384-wg5Y/JwF7VxGk4zLsJEcAojRtlVp1FKKdGy1qN+OMtdq72WRvX/EdRdqg/LOhYeV"
+            crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+    <title>图书管理系统 - 安天移动安全</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<nav class="navbar bg-light">
+    <div class="container">
+        <a class="navbar-brand" href="#"></a>
+    </div>
+</nav>
+<div class="container">
+    Hello World! {% match current_user %}
+    {% when Some with (val) %}
+    <span>{{ val.uid }}</span>
+    {% when None %}
+    没有登陆
+    {% endmatch %}
+</div>
+</body>
+</html>

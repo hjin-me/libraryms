@@ -27,3 +27,7 @@ lazy_static = "1.4.0"
 
 [dependencies.ldap3]
 version = "0.10.5"
+
+[dependencies.jsonwebtoken]
+version = "8"
+default-features = false

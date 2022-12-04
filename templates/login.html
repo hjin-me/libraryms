@@ -1,0 +1,40 @@
+<html lang="zh-Hans">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://unpkg.com/htmx.org@1.8.4"
+            integrity="sha384-wg5Y/JwF7VxGk4zLsJEcAojRtlVp1FKKdGy1qN+OMtdq72WRvX/EdRdqg/LOhYeV"
+            crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+    <title>访客登记 - 安天移动安全</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<nav class="navbar bg-light">
+    <div class="container">
+        <a class="navbar-brand" href="#">访客登记</a>
+    </div>
+</nav>
+<div class="container">
+    {% if msg !=  "" %}
+    <div class="alert alert-warning" role="alert">
+        {{ msg }}
+    </div>
+    {% endif %}
+    <!-- Content here -->
+    <form hx-post="/authentication" hx-target="this" hx-swap="outerHTML">
+        <div class="mb-3">
+            <label for="username" class="form-label">用户名</label>
+            <input type="text" class="form-control" name="username" id="username">
+            <div class="form-text">哈哈哈</div>
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">密码</label>
+            <input type="tel" class="form-control" name="password" id="password">
+            <div class="form-text">嘿嘿嘿</div>
+        </div>
+        <button type="submit" class="btn btn-primary">登录</button>
+    </form>
+</div>
+</body>
+</html>
