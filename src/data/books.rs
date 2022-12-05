@@ -1,9 +1,8 @@
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use serde::{Deserialize, Serialize};
-use serde_json;
-// use time::serde::iso8601;
-use tokio_postgres::{NoTls, Transaction};
+use tokio_postgres::NoTls;
+use tracing::trace;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct db_model {
@@ -12,12 +11,23 @@ struct db_model {
     title: String,
     authors: Vec<String>,
     publisher: String,
-    publish_date: time::OffsetDateTime,
+    publish_date: String,
     state: i64,
     thumbnail: String,
     created_at: time::OffsetDateTime,
     deleted_at: Option<time::OffsetDateTime>,
 }
+
+struct ChangeLogModel {
+    id: i64,
+    operator: String,
+    source_id: i64,
+    source_type: String,
+    state: String,
+    action: String,
+    operate_at: time::OffsetDateTime,
+}
+
 pub struct Book {
     pub id: i32,
     pub title: String,
@@ -35,10 +45,13 @@ impl BookMS {
             api_key: api_key.clone().to_string(),
         }
     }
-    pub async fn storage(&self, isbn: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn storage(
+        &self,
+        isbn: &str,
+        operator: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let isbn = get_book_by_isbn(isbn, &self.api_key).await?;
         let mut client = self.pg.get().await?;
-        let tc = client.transaction().await?;
         let bk = db_model {
             id: 0,
             isbn: isbn.code.to_string(),
@@ -49,16 +62,23 @@ impl BookMS {
                 .map(|v| v.trim().to_string())
                 .collect(),
             publisher: isbn.publishing.to_string(),
-            publish_date: time::OffsetDateTime::now_utc(),
+            publish_date: isbn.published.to_string(),
             state: 0,
             thumbnail: isbn.photo_url.to_string(),
             created_at: time::OffsetDateTime::now_utc(),
             deleted_at: None,
         };
-        tc.execute(
-            "INSERT INTO books (isbn, title, authors, publisher, publish_date, state, thumbnail, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+        let tc = client.transaction().await?;
+        let bid: i64 = tc.query_one(
+            "INSERT INTO books (isbn, title, authors, publisher, publish_date, state, thumbnail, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
             &[&bk.isbn, &bk.title, &bk.authors, &bk.publisher, &bk.publish_date, &bk.state, &bk.thumbnail, &bk.created_at],
-        ).await?;
+        ).await?.get(0);
+        trace!("book id: {}", bid);
+        let oid: i64 = tc.query_one("INSERT INTO change_logs (operator, source_id, source_type, state, action, operate_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+                   &[&operator, &bid , &"book", &"已入库", &"新书第一次入库", &bk.created_at]).await?.get(0);
+        trace!("operator id: {}", oid);
+        tc.execute("UPDATE books SET state = $1 WHERE id = $2", &[&oid, &bid])
+            .await?;
         tc.commit().await?;
         Ok(())
     }
@@ -105,9 +125,8 @@ async fn get_book_by_isbn(
 #[cfg(test)]
 mod test {
     use crate::conf::get_conf;
-    use crate::data::books::{get_book_by_isbn, BookMS, Root};
+    use crate::data::books::{get_book_by_isbn, BookMS};
     use crate::data::get_pool;
-    use std::fs;
 
     #[tokio::test]
     async fn isbn() {
@@ -121,7 +140,7 @@ mod test {
         let conf = get_conf("./config.toml");
         let pool = get_pool(&conf.pg_dsn).await.unwrap();
         BookMS::new(&pool, &conf.isbn_api_key)
-            .storage("9787121390746")
+            .storage("9787121390746", "songsong")
             .await
             .unwrap();
     }
