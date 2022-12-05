@@ -10,7 +10,6 @@ askama = { version = "0.11.1" }
 axum = { version = "0.6.0", features = ["http2", "macros", "headers"] }
 bb8 = "0.8.0"
 bb8-postgres = "0.8.1"
-time = { version = "0.3", features = ["formatting", "parsing", "serde", "macros"] }
 tokio = { version = "1.21.2", features = ["full"] }
 tokio-postgres = { version = "0.7.7", features = ["with-uuid-1", "with-time-0_3"] }
 uuid = "1.0"
@@ -31,3 +30,7 @@ version = "0.10.5"
 [dependencies.jsonwebtoken]
 version = "8"
 default-features = false
+
+[dependencies.time]
+version = "0.3"
+features = ["formatting", "parsing", "serde", "macros"]

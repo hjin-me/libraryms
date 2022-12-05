@@ -1,3 +1,4 @@
+pub mod books;
 pub mod ldap;
 
 use bb8::Pool;

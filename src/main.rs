@@ -1,23 +1,11 @@
 mod app;
+mod conf;
 mod data;
-
+use crate::conf::get_conf;
 use crate::data::ldap::LdapIdent;
 use clap::Parser;
-use serde::Deserialize;
-use std::fs;
-use toml;
 use tracing::{info, Level};
 
-#[derive(Debug, Deserialize)]
-struct Config {
-    pg_dsn: String,
-    session_secret: String,
-    ldap_url: String,
-    ldap_base: String,
-    ldap_attr: String,
-    ldap_bind_dn: Option<String>,
-    ldap_bind_pw: Option<String>,
-}
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
@@ -39,17 +27,15 @@ async fn main() {
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
     info!("Starting up {}", &args.config);
 
-    let contents =
-        fs::read_to_string(&args.config).expect("Should have been able to read the file");
-    let conf: Config = toml::from_str(contents.as_str()).unwrap();
+    let conf = get_conf(&args.config);
     let p = data::get_pool(&conf.pg_dsn).await.unwrap();
-    let b = if let (Some(bind_dn), Some(bind_pw)) = (conf.ldap_bind_dn, conf.ldap_bind_pw) {
+    let b = if let (Some(bind_dn), Some(bind_pw)) = (conf.ldap.bind_dn, conf.ldap.bind_pw) {
         Some((bind_dn, bind_pw))
     } else {
         None
     };
 
-    let mut li = LdapIdent::new(&conf.ldap_url, &conf.ldap_base, &conf.ldap_attr, b)
+    let mut li = LdapIdent::new(&conf.ldap.url, &conf.ldap.base, &conf.ldap.attr, b)
         .await
         .unwrap();
 
