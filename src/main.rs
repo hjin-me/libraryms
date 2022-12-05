@@ -2,6 +2,7 @@ mod app;
 mod conf;
 mod data;
 use crate::conf::get_conf;
+use crate::data::books::BookMS;
 use crate::data::ldap::LdapIdent;
 use clap::Parser;
 use tracing::{info, Level};
@@ -39,5 +40,7 @@ async fn main() {
         .await
         .unwrap();
 
-    app::start(&p, &conf.session_secret, &mut li).await;
+    let bms = BookMS::new(&p, &conf.isbn_api_key);
+
+    app::start(&p, &conf.session_secret, &mut li, &bms).await;
 }

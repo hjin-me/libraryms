@@ -31,13 +31,14 @@ struct ChangeLogModel {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Book {
     pub id: i64,
-    isbn: String,
-    title: String,
-    authors: Vec<String>,
-    publisher: String,
-    import_at: time::OffsetDateTime,
-    state: String,
+    pub isbn: String,
+    pub title: String,
+    pub authors: Vec<String>,
+    pub publisher: String,
+    pub import_at: time::OffsetDateTime,
+    pub state: String,
 }
+#[derive(Clone)]
 pub struct BookMS {
     pg: Pool<PostgresConnectionManager<NoTls>>,
     api_key: String,

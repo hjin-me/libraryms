@@ -4,7 +4,9 @@ mod common;
 mod home;
 pub mod ident;
 
+use crate::app::books::book_list_get;
 use crate::app::ident::{login_get, login_post, save_session_get};
+use crate::data::books::BookMS;
 use crate::data::ldap::LdapIdent;
 use axum::extract::{FromRef, FromRequestParts};
 use axum::http::request::Parts;
@@ -21,17 +23,20 @@ pub struct AppState {
     pub pool: Pool<PostgresConnectionManager<NoTls>>,
     pub session_secret: String,
     pub ldap: LdapIdent,
+    pub book_ms: BookMS,
 }
 
 pub async fn start(
     pg_pool: &Pool<PostgresConnectionManager<NoTls>>,
     session_secret: &String,
     ldap: &mut LdapIdent,
+    book_ms: &BookMS,
 ) {
     let app_state = AppState {
         pool: pg_pool.clone(),
         session_secret: session_secret.clone(),
         ldap: ldap.clone(),
+        book_ms: book_ms.clone(),
     };
     // // build our application with a single route
     let app = Router::new()
@@ -40,6 +45,7 @@ pub async fn start(
         .route("/readiness", get(|| async { "I'm ready!" }))
         .route("/authentication", get(login_get).post(login_post))
         .route("/auth-code", get(save_session_get))
+        .route("/books", get(book_list_get))
         .with_state(app_state);
 
     // run it with hyper on localhost:3000

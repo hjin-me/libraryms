@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    Hello World! {% match current_user %}
+    {% when Some with (val) %}
+    <span>{{ val.uid }}</span>
+    {% when None %}
+    没有登陆
+    {% endmatch %}
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">书名</th>
+            <th scope="col">作者</th>
+            <th scope="col">状态</th>
+            <th scope="col">操作人</th>
+            <th scope="col">ISBN</th>
+            <th scope="col">出版商</th>
+            <th scope="col">入库时间</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for book in books %}
+        <tr>
+            <th scope="row">{{book.id}}</th>
+            <td>{{book.title}}</td>
+            <td>{{book.authors|join(", ")}}</td>
+            <td>{{book.state}}</td>
+            <td></td>
+            <td>{{book.isbn}}</td>
+            <td>{{book.publisher}}</td>
+            <td>{{book.import_at}}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
