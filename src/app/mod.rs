@@ -1,4 +1,5 @@
 mod auth;
+mod books;
 mod common;
 mod home;
 pub mod ident;
