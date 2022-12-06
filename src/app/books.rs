@@ -1,4 +1,4 @@
-use crate::app::auth::{Entity, IdentRequire};
+use crate::app::auth::{Entity, IdentOptional, IdentRequire};
 use crate::app::common::filters;
 use crate::app::AppState;
 use crate::data::books::Book;
@@ -14,11 +14,14 @@ struct BookListTemplate {
     books: Vec<Book>,
 }
 
-pub async fn book_list_get(State(s): State<AppState>) -> impl IntoResponse {
+pub async fn book_list_get(
+    IdentOptional(entity): IdentOptional,
+    State(s): State<AppState>,
+) -> impl IntoResponse {
     let bms = s.book_ms;
-    let bs = bms.list(&100, &0).await.unwrap();
+    let bs = bms.list(&1000, &0).await.unwrap();
     let template = BookListTemplate {
-        current_user: None,
+        current_user: entity,
         books: bs,
     };
     crate::app::common::HtmlTemplate(template)
@@ -40,7 +43,7 @@ pub async fn simple_storage(
     let bms = s.book_ms;
     bms.storage(&p.isbn, &current_user.uid).await.unwrap();
     let template = BooksTableTemplate {
-        books: bms.list(&100, &0).await.unwrap(),
+        books: bms.list(&1000, &0).await.unwrap(),
     };
     crate::app::common::HtmlTemplate(template)
 }

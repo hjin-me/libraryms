@@ -38,8 +38,7 @@ where
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let TypedHeader(cookies) = TypedHeader::<Cookie>::from_request_parts(parts, state)
             .await
-            .map_err(|e| (StatusCode::UNAUTHORIZED, format!("身份认证失败, {}", e)))
-            .unwrap();
+            .map_err(|e| (StatusCode::UNAUTHORIZED, format!("身份认证失败, {}", e)))?;
         match cookies.get("x-token") {
             Some(token) => {
                 let app_state = AppState::from_ref(state);

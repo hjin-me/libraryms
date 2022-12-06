@@ -25,16 +25,13 @@
         </a>
 
         <ul class="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
-            <li><a href="#" class="nav-link px-2 link-secondary">Home</a></li>
-            <li><a href="#" class="nav-link px-2 link-dark">Features</a></li>
-            <li><a href="#" class="nav-link px-2 link-dark">Pricing</a></li>
-            <li><a href="#" class="nav-link px-2 link-dark">FAQs</a></li>
-            <li><a href="#" class="nav-link px-2 link-dark">About</a></li>
+            <li><a href="/books" class="nav-link px-2 link-secondary">图书管理</a></li>
         </ul>
 
         <div class="col-md-3 text-end">
             {% match current_user %}
             {% when Some with (val) %}
+            <span>{{ val.uid }}</span>
             <button type="button" class="btn btn-primary">注销</button>
             {% when None %}
             <a href="/authentication" class="btn btn-outline-primary me-2">登陆</a>
@@ -44,7 +41,7 @@
 </div>
 <div class="container">
     <div class="row">
-        <div class="col-1">
+        <div class="col-12">
             {% block content %}{% endblock %}
         </div>
     </div>

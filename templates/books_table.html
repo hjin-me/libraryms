@@ -1,3 +1,12 @@
+<style>
+    #books-table .ellipsis {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 16em;
+        display: inline-block;
+    }
+</style>
 <table class="table table-sm" id="books-table">
     <thead>
     <tr>
@@ -6,6 +15,7 @@
         <th scope="col">作者</th>
         <th scope="col">状态</th>
         <th scope="col">操作人</th>
+        <th scope="col">上次变更</th>
         <th scope="col">ISBN</th>
         <th scope="col">出版商</th>
         <th scope="col">入库时间</th>
@@ -15,10 +25,11 @@
     {% for book in books %}
     <tr>
         <th scope="row">{{book.id}}</th>
-        <td>{{book.title}}</td>
+        <td><span class="ellipsis">{{book.title}}</span></td>
         <td>{{book.authors|join(", ")}}</td>
         <td>{{book.state}}</td>
-        <td></td>
+        <td>{{book.operator}}</td>
+        <td>{{book.operate_at|date_fmt("[year]/[month]/[day]")}}</td>
         <td>{{book.isbn}}</td>
         <td>{{book.publisher}}</td>
         <td>{{book.import_at|date_fmt("[year]/[month]/[day]")}}</td>

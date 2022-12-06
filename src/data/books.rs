@@ -37,6 +37,8 @@ pub struct Book {
     pub publisher: String,
     pub import_at: time::OffsetDateTime,
     pub state: String,
+    pub operator: String,
+    pub operate_at: time::OffsetDateTime,
 }
 #[derive(Clone)]
 pub struct BookMS {
@@ -58,7 +60,7 @@ impl BookMS {
         let conn = self.pg.get().await?;
         let book_rows = conn
             .query(
-                "SELECT b.id, b.isbn, b.title, b.authors, b.publisher, b.created_at,  cl.state FROM books b
+                "SELECT b.id, b.isbn, b.title, b.authors, b.publisher, b.created_at, cl.state, cl.operator, cl.operate_at FROM books b
     LEFT JOIN change_logs cl on b.state_id = cl.id ORDER BY b.created_at desc LIMIT $1 OFFSET $2 ",
                 &[&limit, &offset],
             )
@@ -73,6 +75,8 @@ impl BookMS {
                 publisher: row.get(4),
                 import_at: row.get(5),
                 state: row.get(6),
+                operator: row.get(7),
+                operate_at: row.get(8),
             })
             .collect();
         Ok(books)
@@ -88,11 +92,7 @@ impl BookMS {
             id: 0,
             isbn: isbn.code.to_string(),
             title: isbn.name.to_string(),
-            authors: isbn
-                .author
-                .split("/")
-                .map(|v| v.trim().to_string())
-                .collect(),
+            authors: isbn.authors,
             publisher: isbn.publishing.to_string(),
             publish_date: isbn.published.to_string(),
             state_id: 0,
@@ -125,17 +125,31 @@ struct ISBNData {
     pub id: i64,
     pub name: String,
     pub subname: String,
-    pub author: String,
+    pub authors: Vec<String>,
     pub publishing: String,
     pub published: String,
-    pub designed: String,
+    // pub designed: String,
     pub code: String,
     pub pages: String,
-    #[serde(rename = "photoUrl")]
     pub photo_url: String,
     pub price: String,
-    #[serde(rename = "authorIntro")]
-    pub author_intro: String,
+    pub description: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct ISBNDataRaw {
+    pub id: i64,
+    pub name: String,
+    pub subname: String,
+    pub author: Option<String>,
+    pub publishing: String,
+    pub published: String,
+    // pub designed: String,
+    pub code: String,
+    pub pages: String,
+    #[serde(rename = "photoUrl", default)]
+    pub photo_url: Option<String>,
+    pub price: String,
     pub description: String,
 }
 
@@ -143,7 +157,7 @@ struct ISBNData {
 struct Root {
     pub ret: i64,
     pub msg: String,
-    pub data: ISBNData,
+    pub data: ISBNDataRaw,
 }
 async fn get_book_by_isbn(
     isbn: &str,
@@ -154,19 +168,40 @@ async fn get_book_by_isbn(
         isbn, api_key
     );
     let resp = reqwest::get(&url).await?.json::<Root>().await?;
-    Ok(resp.data)
+    Ok(ISBNData {
+        id: resp.data.id,
+        name: resp.data.name,
+        subname: resp.data.subname,
+        authors: resp
+            .data
+            .author
+            .unwrap_or("".to_string())
+            .split("/")
+            .map(|v| v.trim().to_string())
+            .collect(),
+        publishing: resp.data.publishing,
+        published: resp.data.published,
+        code: resp.data.code,
+        pages: resp.data.pages,
+        photo_url: resp.data.photo_url.unwrap_or("".to_string()),
+        price: resp.data.price,
+        description: resp.data.description,
+    })
 }
 
 #[cfg(test)]
 mod test {
     use crate::conf::get_conf;
-    use crate::data::books::{get_book_by_isbn, BookMS};
+    use crate::data::books::{get_book_by_isbn, BookMS, Root};
     use crate::data::get_pool;
 
     #[tokio::test]
     async fn isbn() {
         let conf = get_conf("./config.toml");
         let isbn = "9787121390746";
+        let resp = get_book_by_isbn(&isbn, &conf.isbn_api_key).await.unwrap();
+        println!("{:?}", resp);
+        let isbn = "9787302590811";
         let resp = get_book_by_isbn(&isbn, &conf.isbn_api_key).await.unwrap();
         println!("{:?}", resp);
     }
@@ -188,5 +223,20 @@ mod test {
             .await
             .unwrap();
         println!("{:?}", books);
+    }
+    #[tokio::test]
+    async fn decode() {
+        let r = "{\"ret\":0,\"msg\":\"请求成功\",\"data\":\
+        {\"id\":9787302590811,\"name\":\"运筹学（第5版）（21世纪经济管理新形态教材·管理科学与工程系列）\",\
+        \"subname\":\"\",\"author\":null,\"translator\":null,\"publishing\":\"清华大学出版社\",\"published\":\"\",\"designed\":\"\",\
+        \"code\":\"9787302590811\",\"douban\":35676616,\"doubanScore\":0,\
+        \"numScore\":0,\"brand\":null,\"weight\":null,\"size\":null,\
+        \"pages\":\"540\",\"photoUrl\":null,\"localPhotoUrl\":\"\",\
+        \"price\":\"\",\"froms\":\"douban_api2\",\"num\":0,\
+        \"createTime\":\"2022-06-10T08:59:30\",\"uptime\":\"2022-12-06T14:50:03\",\
+        \"authorIntro\":\"\",\"description\":\"本书是在第四版的基础上修订而成的，吸收了广大读者的意见，做了局部调整和修改。除原有线性规划、整数规划、非线性规划、动态规划、图与网络分析、排队论、存储论、对策论、决策论、目标规划和多目标决策以外，删除了启发式方法一章。  本书着重介绍运筹学的基本原理和方法，注重结合经济管理专业实际，具有一定的深度和广度。书中每章后附有习题，便于自学。有些部分的后面增补了“注记”，便于读者了解运筹学各分支的发展趋势。  本书可作为高等院校理工科各专业的教材，亦可作为考研究生的参考书。\",\
+        \"reviews\":null,\"tags\":null}}" ;
+        let root = serde_json::from_str::<Root>(r).unwrap();
+        println!("{:?}", root.data);
     }
 }

@@ -1,13 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container">
-    Hello World! {% match current_user %}
-    {% when Some with (val) %}
-    <span>{{ val.uid }}</span>
-    {% when None %}
-    没有登陆
-    {% endmatch %}
 
+    {% match current_user %}
+    {% when Some with (val) %}
     <form class="row g-3" hx-post="/book/fast-import" hx-target="#books-table">
         <div class="col-auto">
             <label for="isbn" class="visually-hidden">ISBN</label>
@@ -17,6 +13,8 @@
             <button type="submit" class="btn btn-primary mb-3">入库</button>
         </div>
     </form>
+    {% when None %}
+    {% endmatch %}
 
     <div class="row">
         <div class="col-12">
