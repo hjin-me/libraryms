@@ -4,15 +4,15 @@ mod common;
 mod home;
 pub mod ident;
 
-use crate::app::books::book_list_get;
+use crate::app::books::{book_list_get, simple_storage};
 use crate::app::ident::{login_get, login_post, save_session_get};
 use crate::data::books::BookMS;
 use crate::data::ldap::LdapIdent;
 use axum::extract::{FromRef, FromRequestParts};
 use axum::http::request::Parts;
 use axum::http::StatusCode;
-use axum::response::{Html, IntoResponse, Response};
-use axum::routing::get;
+use axum::response::{IntoResponse, Response};
+use axum::routing::{get, post};
 use axum::Router;
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
@@ -46,6 +46,7 @@ pub async fn start(
         .route("/authentication", get(login_get).post(login_post))
         .route("/auth-code", get(save_session_get))
         .route("/books", get(book_list_get))
+        .route("/book/fast-import", post(simple_storage))
         .with_state(app_state);
 
     // run it with hyper on localhost:3000
@@ -70,23 +71,5 @@ where
         let app_state = AppState::from_ref(state);
 
         Ok(Self(app_state.pool))
-    }
-}
-
-struct HtmlTemplate<T>(T);
-
-impl<T> IntoResponse for HtmlTemplate<T>
-where
-    T: askama::Template,
-{
-    fn into_response(self) -> Response {
-        match self.0.render() {
-            Ok(html) => Html(html).into_response(),
-            Err(err) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to render template. Error: {}", err),
-            )
-                .into_response(),
-        }
     }
 }

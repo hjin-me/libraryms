@@ -6,7 +6,7 @@ pub async fn home(IdentOptional(entity): IdentOptional) -> impl IntoResponse {
     let template = PageTemplate {
         current_user: entity,
     };
-    crate::app::HtmlTemplate(template)
+    crate::app::common::HtmlTemplate(template)
 }
 
 #[derive(Template)]

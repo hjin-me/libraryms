@@ -29,6 +29,7 @@ async fn main() {
     info!("Starting up {}", &args.config);
 
     let conf = get_conf(&args.config);
+    info!("connect pg {}", &conf.pg_dsn);
     let p = data::get_pool(&conf.pg_dsn).await.unwrap();
     let b = if let (Some(bind_dn), Some(bind_pw)) = (conf.ldap.bind_dn, conf.ldap.bind_pw) {
         Some((bind_dn, bind_pw))
@@ -36,6 +37,7 @@ async fn main() {
         None
     };
 
+    info!("connect ldap {}", &conf.ldap.url);
     let mut li = LdapIdent::new(&conf.ldap.url, &conf.ldap.base, &conf.ldap.attr, b)
         .await
         .unwrap();

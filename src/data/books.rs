@@ -59,7 +59,7 @@ impl BookMS {
         let book_rows = conn
             .query(
                 "SELECT b.id, b.isbn, b.title, b.authors, b.publisher, b.created_at,  cl.state FROM books b
-    LEFT JOIN change_logs cl on b.state_id = cl.id LIMIT $1 OFFSET $2",
+    LEFT JOIN change_logs cl on b.state_id = cl.id ORDER BY b.created_at desc LIMIT $1 OFFSET $2 ",
                 &[&limit, &offset],
             )
             .await?;
