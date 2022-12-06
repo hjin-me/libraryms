@@ -63,3 +63,35 @@ pub async fn delete_book(
     };
     crate::app::common::HtmlTemplate(template)
 }
+#[derive(Deserialize, Serialize)]
+pub struct BorrowParams {
+    book_id: i64,
+}
+pub async fn borrow_book(
+    IdentRequire(u): IdentRequire,
+    State(s): State<AppState>,
+    Path(p): Path<BorrowParams>,
+) -> impl IntoResponse {
+    let bms = s.book_ms;
+    bms.borrow(&p.book_id, &u.uid).await.unwrap();
+    let template = BooksTableTemplate {
+        books: bms.list(&1000, &0).await.unwrap(),
+    };
+    crate::app::common::HtmlTemplate(template)
+}
+#[derive(Deserialize, Serialize)]
+pub struct ReturnParams {
+    book_id: i64,
+}
+pub async fn return_book(
+    IdentRequire(u): IdentRequire,
+    State(s): State<AppState>,
+    Path(p): Path<ReturnParams>,
+) -> impl IntoResponse {
+    let bms = s.book_ms;
+    bms.revert_to(&p.book_id, &u.uid).await.unwrap();
+    let template = BooksTableTemplate {
+        books: bms.list(&1000, &0).await.unwrap(),
+    };
+    crate::app::common::HtmlTemplate(template)
+}

@@ -9,16 +9,28 @@ enum BookStatus {
     Returned,
     Lost,
     Deleted,
+    Unknown,
 }
 
 impl BookStatus {
     fn to_string(&self) -> String {
         match self {
-            BookStatus::Stock => "已入库".to_string(),
+            BookStatus::Stock => "库存".to_string(),
             BookStatus::Borrowed => "已借出".to_string(),
             BookStatus::Returned => "已归还".to_string(),
             BookStatus::Lost => "遗失".to_string(),
             BookStatus::Deleted => "已删除".to_string(),
+            BookStatus::Unknown => "未知".to_string(),
+        }
+    }
+    fn from_str(s: &str) -> Self {
+        match s {
+            "库存" => BookStatus::Stock,
+            "已借出" => BookStatus::Borrowed,
+            "已归还" => BookStatus::Returned,
+            "遗失" => BookStatus::Lost,
+            "已删除" => BookStatus::Deleted,
+            _ => BookStatus::Unknown,
         }
     }
 }
@@ -166,7 +178,7 @@ impl BookMS {
         Ok(())
     }
 
-    pub async fn borrow(&self, who: &str, book_id: &i64) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn borrow(&self, book_id: &i64, who: &str) -> Result<(), Box<dyn std::error::Error>> {
         let mut client = self.pg.get().await?;
         let tc = client.transaction().await?;
         let oid: i64 = tc
@@ -177,15 +189,45 @@ impl BookMS {
                     &who,
                     &book_id,
                     &"book",
-                    &"借书",
+                    &format!("{} 借出书籍", who),
                     &time::OffsetDateTime::now_utc(),
                 ],
             )
             .await?
             .get(0);
         tc.execute(
-            "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and libms.public.books.deleted_at is null",
+            "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and deleted_at is null",
             &[&BookStatus::Borrowed.to_string(), &oid, &book_id],
+        )
+        .await?;
+        tc.commit().await?;
+        Ok(())
+    }
+
+    pub async fn revert_to(
+        &self,
+        book_id: &i64,
+        who: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut client = self.pg.get().await?;
+        let tc = client.transaction().await?;
+        let oid: i64 = tc
+            .query_one(
+                "INSERT INTO change_logs (operator, source_id, source_type, action, operate_at)
+                            VALUES ($1, $2, $3, $4, $5) RETURNING id",
+                &[
+                    &who,
+                    &book_id,
+                    &"book",
+                    &"归还书籍",
+                    &time::OffsetDateTime::now_utc(),
+                ],
+            )
+            .await?
+            .get(0);
+        tc.execute(
+            "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and deleted_at is null",
+            &[&BookStatus::Returned.to_string(), &oid, &book_id],
         )
         .await?;
         tc.commit().await?;
@@ -212,19 +254,19 @@ struct ISBNData {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ISBNDataRaw {
-    pub id: i64,
-    pub name: String,
-    pub subname: String,
-    pub author: Option<String>,
-    pub publishing: String,
-    pub published: String,
-    // pub designed: String,
-    pub code: String,
-    pub pages: String,
+    id: i64,
+    name: String,
+    subname: String,
+    author: Option<String>,
+    publishing: String,
+    published: String,
+    // designed: String,
+    code: String,
+    pages: String,
     #[serde(rename = "photoUrl", default)]
-    pub photo_url: Option<String>,
-    pub price: String,
-    pub description: String,
+    photo_url: Option<String>,
+    price: String,
+    description: String,
 }
 
 #[derive(Serialize, Deserialize)]

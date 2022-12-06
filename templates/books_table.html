@@ -35,9 +35,23 @@
         <td>{{book.publisher}}</td>
         <td>{{book.import_at|date_fmt("[year]/[month]/[day]")}}</td>
         <td>
-            <button type="button" class="btn danger btn-sm"
+            {% if book.state == "库存" %}
+            <button type="button" class="btn btn-primary btn-sm"
+                    hx-post="/book/borrow/{{book.id}}" hx-target="#books-table"
+            >借阅
+            </button>
+            {% endif %}
+            {% if book.state == "已借出" %}
+            <button type="button" class="btn btn-primary btn-sm"
+                    hx-post="/book/return/{{book.id}}" hx-target="#books-table"
+            >归还
+            </button>
+            {% endif %}
+
+            <button type="button" class="btn btn-danger btn-sm"
                     hx-delete="/book/{{book.id}}" hx-target="#books-table"
-            >删除</button>
+            >删除
+            </button>
         </td>
     </tr>
     {% endfor %}
