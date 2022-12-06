@@ -3,16 +3,36 @@ use bb8_postgres::PostgresConnectionManager;
 use serde::{Deserialize, Serialize};
 use tokio_postgres::NoTls;
 use tracing::trace;
+enum BookStatus {
+    Stock,
+    Borrowed,
+    Returned,
+    Lost,
+    Deleted,
+}
+
+impl BookStatus {
+    fn to_string(&self) -> String {
+        match self {
+            BookStatus::Stock => "已入库".to_string(),
+            BookStatus::Borrowed => "已借出".to_string(),
+            BookStatus::Returned => "已归还".to_string(),
+            BookStatus::Lost => "遗失".to_string(),
+            BookStatus::Deleted => "已删除".to_string(),
+        }
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
-struct DbModel {
+struct BookModel {
     id: i64,
     isbn: String,
     title: String,
     authors: Vec<String>,
     publisher: String,
     publish_date: String,
-    state_id: i64,
+    state: String,
+    log_id: i64,
     thumbnail: String,
     created_at: time::OffsetDateTime,
     deleted_at: Option<time::OffsetDateTime>,
@@ -60,8 +80,8 @@ impl BookMS {
         let conn = self.pg.get().await?;
         let book_rows = conn
             .query(
-                "SELECT b.id, b.isbn, b.title, b.authors, b.publisher, b.created_at, cl.state, cl.operator, cl.operate_at FROM books b
-    LEFT JOIN change_logs cl on b.state_id = cl.id ORDER BY b.created_at desc LIMIT $1 OFFSET $2 ",
+                "SELECT b.id, b.isbn, b.title, b.authors, b.publisher, b.created_at, b.state, cl.operator, cl.operate_at FROM books b
+    LEFT JOIN change_logs cl on b.log_id = cl.id WHERE b.deleted_at is null ORDER BY b.created_at desc LIMIT $1 OFFSET $2 ",
                 &[&limit, &offset],
             )
             .await?;
@@ -81,6 +101,36 @@ impl BookMS {
             .collect();
         Ok(books)
     }
+    pub async fn delete(&self, book_id: &i64, who: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let mut client = self.pg.get().await?;
+        let tc = client.transaction().await?;
+        let oid: i64 = tc
+            .query_one(
+                "INSERT INTO change_logs (operator, source_id, source_type, action, operate_at)
+                            VALUES ($1, $2, $3, $4, $5) RETURNING id",
+                &[
+                    &who,
+                    &book_id,
+                    &"book",
+                    &"删除该书籍",
+                    &time::OffsetDateTime::now_utc(),
+                ],
+            )
+            .await?
+            .get(0);
+        tc.execute(
+            "UPDATE books SET state = $1, log_id = $2, deleted_at = $3 WHERE id = $4",
+            &[
+                &BookStatus::Deleted.to_string(),
+                &oid,
+                &time::OffsetDateTime::now_utc(),
+                &book_id,
+            ],
+        )
+        .await?;
+        tc.commit().await?;
+        Ok(())
+    }
     pub async fn storage(
         &self,
         isbn: &str,
@@ -88,30 +138,54 @@ impl BookMS {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let isbn = get_book_by_isbn(isbn, &self.api_key).await?;
         let mut client = self.pg.get().await?;
-        let bk = DbModel {
+        let bk = BookModel {
             id: 0,
             isbn: isbn.code.to_string(),
             title: isbn.name.to_string(),
             authors: isbn.authors,
             publisher: isbn.publishing.to_string(),
             publish_date: isbn.published.to_string(),
-            state_id: 0,
+            log_id: 0,
             thumbnail: isbn.photo_url.to_string(),
             created_at: time::OffsetDateTime::now_utc(),
             deleted_at: None,
+            state: BookStatus::Stock.to_string(),
         };
         let tc = client.transaction().await?;
         let bid: i64 = tc.query_one(
-            "INSERT INTO books (isbn, title, authors, publisher, publish_date, state_id, thumbnail, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
-            &[&bk.isbn, &bk.title, &bk.authors, &bk.publisher, &bk.publish_date, &bk.state_id, &bk.thumbnail, &bk.created_at],
+            "INSERT INTO books (isbn, title, authors, publisher, publish_date, state, log_id, thumbnail, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
+            &[&bk.isbn, &bk.title, &bk.authors, &bk.publisher, &bk.publish_date, &bk.state, &bk.log_id, &bk.thumbnail, &bk.created_at],
         ).await?.get(0);
         trace!("book id: {}", bid);
-        let oid: i64 = tc.query_one("INSERT INTO change_logs (operator, source_id, source_type, state, action, operate_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
-                   &[&operator, &bid , &"book", &"已入库", &"新书第一次入库", &bk.created_at]).await?.get(0);
+        let oid: i64 = tc.query_one("INSERT INTO change_logs (operator, source_id, source_type, action, operate_at) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+                   &[&operator, &bid , &"book", &"新书第一次入库", &bk.created_at]).await?.get(0);
         trace!("operator id: {}", oid);
+        tc.execute("UPDATE books SET log_id = $1 WHERE id = $2", &[&oid, &bid])
+            .await?;
+        tc.commit().await?;
+        Ok(())
+    }
+
+    pub async fn borrow(&self, who: &str, book_id: &i64) -> Result<(), Box<dyn std::error::Error>> {
+        let mut client = self.pg.get().await?;
+        let tc = client.transaction().await?;
+        let oid: i64 = tc
+            .query_one(
+                "INSERT INTO change_logs (operator, source_id, source_type, action, operate_at)
+                            VALUES ($1, $2, $3, $4, $5) RETURNING id",
+                &[
+                    &who,
+                    &book_id,
+                    &"book",
+                    &"借书",
+                    &time::OffsetDateTime::now_utc(),
+                ],
+            )
+            .await?
+            .get(0);
         tc.execute(
-            "UPDATE books SET state_id = $1 WHERE id = $2",
-            &[&oid, &bid],
+            "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and libms.public.books.deleted_at is null",
+            &[&BookStatus::Borrowed.to_string(), &oid, &book_id],
         )
         .await?;
         tc.commit().await?;

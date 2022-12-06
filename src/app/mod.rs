@@ -4,15 +4,15 @@ mod common;
 mod home;
 pub mod ident;
 
-use crate::app::books::{book_list_get, simple_storage};
+use crate::app::books::{book_list_get, delete_book, simple_storage};
 use crate::app::ident::{login_get, login_post, save_session_get};
 use crate::data::books::BookMS;
 use crate::data::ldap::LdapIdent;
 use axum::extract::{FromRef, FromRequestParts};
 use axum::http::request::Parts;
 use axum::http::StatusCode;
-use axum::response::{IntoResponse, Response};
-use axum::routing::{get, post};
+use axum::response::Response;
+use axum::routing::{delete, get, post};
 use axum::Router;
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
@@ -47,6 +47,7 @@ pub async fn start(
         .route("/auth-code", get(save_session_get))
         .route("/books", get(book_list_get))
         .route("/book/fast-import", post(simple_storage))
+        .route("/book/:book_id", delete(delete_book))
         .with_state(app_state);
 
     // run it with hyper on localhost:3000

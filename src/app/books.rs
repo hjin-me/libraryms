@@ -3,7 +3,7 @@ use crate::app::common::filters;
 use crate::app::AppState;
 use crate::data::books::Book;
 use askama::Template;
-use axum::extract::{Form, State};
+use axum::extract::{Form, Path, State};
 use axum::response::IntoResponse;
 use serde_derive::{Deserialize, Serialize};
 
@@ -42,6 +42,22 @@ pub async fn simple_storage(
 ) -> impl IntoResponse {
     let bms = s.book_ms;
     bms.storage(&p.isbn, &current_user.uid).await.unwrap();
+    let template = BooksTableTemplate {
+        books: bms.list(&1000, &0).await.unwrap(),
+    };
+    crate::app::common::HtmlTemplate(template)
+}
+#[derive(Deserialize, Serialize)]
+pub struct DeleteParams {
+    book_id: i64,
+}
+pub async fn delete_book(
+    IdentRequire(u): IdentRequire,
+    State(s): State<AppState>,
+    Path(p): Path<DeleteParams>,
+) -> impl IntoResponse {
+    let bms = s.book_ms;
+    bms.delete(&p.book_id, &u.uid).await.unwrap();
     let template = BooksTableTemplate {
         books: bms.list(&1000, &0).await.unwrap(),
     };

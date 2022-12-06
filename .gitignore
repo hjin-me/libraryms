@@ -53,6 +53,7 @@ $RECYCLE.BIN/
 .fleet/
 /data/
 config.toml
+deploy.yml
 
 
 # Added by cargo

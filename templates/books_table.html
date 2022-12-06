@@ -19,6 +19,7 @@
         <th scope="col">ISBN</th>
         <th scope="col">出版商</th>
         <th scope="col">入库时间</th>
+        <th scope="col">操作</th>
     </tr>
     </thead>
     <tbody>
@@ -33,6 +34,11 @@
         <td>{{book.isbn}}</td>
         <td>{{book.publisher}}</td>
         <td>{{book.import_at|date_fmt("[year]/[month]/[day]")}}</td>
+        <td>
+            <button type="button" class="btn danger btn-sm"
+                    hx-delete="/book/{{book.id}}" hx-target="#books-table"
+            >删除</button>
+        </td>
     </tr>
     {% endfor %}
     </tbody>
