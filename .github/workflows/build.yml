@@ -20,12 +20,11 @@ jobs:
           name: ${{ secrets.IMAGE_NAME }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          registry: ${{ secrets.REGISTRY }}
           tag_names: true
       - name: Save docker image name
         shell: bash
         run: |
-          echo ${{ secrets.REGISTRY_INTERNAL }}/${{ secrets.IMAGE_NAME }}:${{ steps.publish.outputs.tag }} > name.txt
+          echo ${{ secrets.IMAGE_NAME }}:${{ steps.publish.outputs.tag }} > name.txt
       - name: Upload docker image name for deploy
         uses: actions/upload-artifact@v1
         with:
