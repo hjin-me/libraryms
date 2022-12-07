@@ -7,8 +7,8 @@ use tokio_postgres::NoTls;
 use tracing::trace;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum BookStatus {
-    Stock,
+pub enum BookState {
+    Available,
     Borrowed,
     Returned,
     Lost,
@@ -16,30 +16,30 @@ pub enum BookStatus {
     Unknown,
 }
 
-impl BookStatus {
+impl BookState {
     fn to_string(&self) -> String {
         match self {
-            BookStatus::Stock => "库存".to_string(),
-            BookStatus::Borrowed => "已借出".to_string(),
-            BookStatus::Returned => "已归还".to_string(),
-            BookStatus::Lost => "遗失".to_string(),
-            BookStatus::Deleted => "已删除".to_string(),
-            BookStatus::Unknown => "未知".to_string(),
+            BookState::Available => "可借阅".to_string(),
+            BookState::Borrowed => "已借出".to_string(),
+            BookState::Returned => "已归还".to_string(),
+            BookState::Lost => "遗失".to_string(),
+            BookState::Deleted => "已删除".to_string(),
+            BookState::Unknown => "未知".to_string(),
         }
     }
     fn from_str(s: &str) -> Self {
         match s {
-            "库存" => BookStatus::Stock,
-            "已借出" => BookStatus::Borrowed,
-            "已归还" => BookStatus::Returned,
-            "遗失" => BookStatus::Lost,
-            "已删除" => BookStatus::Deleted,
-            _ => BookStatus::Unknown,
+            "可借阅" => BookState::Available,
+            "已借出" => BookState::Borrowed,
+            "已归还" => BookState::Returned,
+            "遗失" => BookState::Lost,
+            "已删除" => BookState::Deleted,
+            _ => BookState::Unknown,
         }
     }
 }
 
-impl fmt::Display for BookStatus {
+impl fmt::Display for BookState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.to_string())
     }
@@ -78,7 +78,7 @@ pub struct Book {
     pub authors: Vec<String>,
     pub publisher: String,
     pub import_at: time::OffsetDateTime,
-    pub state: BookStatus,
+    pub state: BookState,
     pub operator: String,
     pub operate_at: time::OffsetDateTime,
 }
@@ -116,7 +116,7 @@ impl BookMS {
                 authors: row.get(3),
                 publisher: row.get(4),
                 import_at: row.get(5),
-                state: BookStatus::from_str(row.get::<_, &str>(6)),
+                state: BookState::from_str(row.get::<_, &str>(6)),
                 operator: row.get(7),
                 operate_at: row.get(8),
             })
@@ -143,7 +143,7 @@ impl BookMS {
         tc.execute(
             "UPDATE books SET state = $1, log_id = $2, deleted_at = $3 WHERE id = $4",
             &[
-                &BookStatus::Deleted.to_string(),
+                &BookState::Deleted.to_string(),
                 &oid,
                 &time::OffsetDateTime::now_utc(),
                 &book_id,
@@ -171,7 +171,7 @@ impl BookMS {
             thumbnail: isbn.photo_url.to_string(),
             created_at: time::OffsetDateTime::now_utc(),
             deleted_at: None,
-            state: BookStatus::Stock.to_string(),
+            state: BookState::Available.to_string(),
         };
         let tc = client.transaction().await?;
         let bid: i64 = tc.query_one(
@@ -207,7 +207,7 @@ impl BookMS {
             .get(0);
         tc.execute(
             "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and deleted_at is null",
-            &[&BookStatus::Borrowed.to_string(), &oid, &book_id],
+            &[&BookState::Borrowed.to_string(), &oid, &book_id],
         )
         .await?;
         tc.commit().await?;
@@ -237,7 +237,7 @@ impl BookMS {
             .get(0);
         tc.execute(
             "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and deleted_at is null",
-            &[&BookStatus::Returned.to_string(), &oid, &book_id],
+            &[&BookState::Returned.to_string(), &oid, &book_id],
         )
         .await?;
         tc.commit().await?;
