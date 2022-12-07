@@ -23,35 +23,24 @@
     </tr>
     </thead>
     <tbody>
-    {% for book in books %}
+    {% for item in books %}
     <tr>
-        <th scope="row">{{book.id}}</th>
-        <td><span class="ellipsis">{{book.title}}</span></td>
-        <td>{{book.authors|join(", ")}}</td>
-        <td>{{book.state}}</td>
-        <td>{{book.operator}}</td>
-        <td>{{book.operate_at|date_fmt("[year]/[month]/[day]")}}</td>
-        <td>{{book.isbn}}</td>
-        <td>{{book.publisher}}</td>
-        <td>{{book.import_at|date_fmt("[year]/[month]/[day]")}}</td>
+        <th scope="row">{{item.book.id}}</th>
+        <td><span class="ellipsis">{{item.book.title}}</span></td>
+        <td>{{item.book.authors|join(", ")}}</td>
+        <td>{{item.book.state}}</td>
+        <td>{{item.book.operator}}</td>
+        <td>{{item.book.operate_at|date_fmt("[year]/[month]/[day]")}}</td>
+        <td>{{item.book.isbn}}</td>
+        <td>{{item.book.publisher}}</td>
+        <td>{{item.book.import_at|date_fmt("[year]/[month]/[day]")}}</td>
         <td>
-            {% if book.state == "库存" %}
-            <button type="button" class="btn btn-primary btn-sm"
-                    hx-post="/book/borrow/{{book.id}}" hx-target="#books-table"
-            >借阅
+            {% for act in item.actions %}
+            <button type="button" class="btn {{act.btn_type}} btn-sm"
+                    hx-{{act.method}}="{{act.path}}" hx-target="#books-table"
+            >{{act.text}}
             </button>
-            {% endif %}
-            {% if book.state == "已借出" %}
-            <button type="button" class="btn btn-primary btn-sm"
-                    hx-post="/book/return/{{book.id}}" hx-target="#books-table"
-            >归还
-            </button>
-            {% endif %}
-
-            <button type="button" class="btn btn-danger btn-sm"
-                    hx-delete="/book/{{book.id}}" hx-target="#books-table"
-            >删除
-            </button>
+            {% endfor %}
         </td>
     </tr>
     {% endfor %}

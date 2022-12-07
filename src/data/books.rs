@@ -1,9 +1,13 @@
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use serde::{Deserialize, Serialize};
+use std::fmt;
+use tokio_postgres::row::RowIndex;
 use tokio_postgres::NoTls;
 use tracing::trace;
-enum BookStatus {
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum BookStatus {
     Stock,
     Borrowed,
     Returned,
@@ -35,6 +39,12 @@ impl BookStatus {
     }
 }
 
+impl fmt::Display for BookStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.to_string())
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 struct BookModel {
     id: i64,
@@ -60,7 +70,7 @@ struct ChangeLogModel {
     operate_at: time::OffsetDateTime,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Book {
     pub id: i64,
     pub isbn: String,
@@ -68,7 +78,7 @@ pub struct Book {
     pub authors: Vec<String>,
     pub publisher: String,
     pub import_at: time::OffsetDateTime,
-    pub state: String,
+    pub state: BookStatus,
     pub operator: String,
     pub operate_at: time::OffsetDateTime,
 }
@@ -106,7 +116,7 @@ impl BookMS {
                 authors: row.get(3),
                 publisher: row.get(4),
                 import_at: row.get(5),
-                state: row.get(6),
+                state: BookStatus::from_str(row.get::<_, &str>(6)),
                 operator: row.get(7),
                 operate_at: row.get(8),
             })
