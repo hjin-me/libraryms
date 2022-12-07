@@ -1,5 +1,7 @@
+use crate::data::accounts::Account;
 use ldap3::result::Result;
 use ldap3::{Ldap, LdapConnAsync, Scope, SearchEntry, SearchResult};
+
 #[derive(Clone)]
 pub struct LdapIdent {
     ldap: Ldap,
@@ -51,6 +53,31 @@ impl LdapIdent {
             r.push(entry);
         }
         Ok(r)
+    }
+    async fn sync_account(&mut self) -> Result<()> {
+        let SearchResult(rs, _) = self
+            .ldap
+            .search(
+                &self.base_dn,
+                Scope::Subtree,
+                &format!("({}={})", self.attr, "*"),
+                vec!["uid", "displayName", "cn", "dn"],
+            )
+            .await?;
+        for entry in rs {
+            let entry = SearchEntry::construct(entry);
+            let uid = entry.attrs.get("uid").unwrap().get(0).unwrap().to_string();
+            let cn = entry.attrs.get("cn").unwrap().get(0).unwrap().to_string();
+            let dn = entry.dn;
+            let display_name = entry
+                .attrs
+                .get("displayName")
+                .unwrap()
+                .get(0)
+                .unwrap()
+                .to_string();
+        }
+        Ok(())
     }
 }
 // async fn search()

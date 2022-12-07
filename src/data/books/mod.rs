@@ -1,3 +1,4 @@
+use crate::data::error;
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use serde::{Deserialize, Serialize};
@@ -388,15 +389,17 @@ struct Root {
     pub msg: String,
     pub data: ISBNDataRaw,
 }
-async fn get_book_by_isbn(
-    isbn: &str,
-    api_key: &str,
-) -> Result<ISBNData, Box<dyn std::error::Error>> {
+async fn get_book_by_isbn(isbn: &str, api_key: &str) -> Result<ISBNData, error::Error> {
     let url = format!(
         "https://api.jike.xyz/situ/book/isbn/{}?apikey={}",
         isbn, api_key
     );
-    let resp = reqwest::get(&url).await?.json::<Root>().await?;
+    let resp = reqwest::get(&url)
+        .await
+        .map_err(|e| error::with_msg(Some(e), "请求ISBN检索服务失败"))?
+        .json::<Root>()
+        .await
+        .map_err(|e| error::with_msg(Some(e), "ISBN检索服务返回数据格式错误"))?;
     Ok(ISBNData {
         id: resp.data.id,
         name: resp.data.name,

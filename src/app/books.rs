@@ -36,9 +36,11 @@ pub async fn simple_storage(
     Form(p): Form<SimpleStorageParams>,
 ) -> impl IntoResponse {
     let bms = s.book_ms;
-    bms.storage(&p.isbn, &u.uid).await.unwrap();
+    bms.storage(&p.isbn, &u.uid).await.expect("图书入库失败");
     let template = BooksTableTemplate {
-        books: handle_book_table(&bms, &0, &1000, &Some(u)).await.unwrap(),
+        books: handle_book_table(&bms, &0, &1000, &Some(u))
+            .await
+            .expect("生成图书列表失败"),
     };
     crate::app::common::HtmlTemplate(template)
 }
@@ -169,77 +171,78 @@ async fn handle_book_table(
         .await
         .unwrap()
         .iter()
-        .map(|b| {
-            let act_borrow = BookAction {
-                btn_type: "btn-primary".to_string(),
-                method: "post".to_string(),
-                path: format!("/book/borrow/{}", &b.id),
-                text: "借阅".to_string(),
-            };
-            let act_return = BookAction {
-                btn_type: "btn-success".to_string(),
-                method: "post".to_string(),
-                path: format!("/book/return/{}", &b.id),
-                text: "归还".to_string(),
-            };
-            let act_confirm = BookAction {
-                btn_type: "btn-info".to_string(),
-                method: "post".to_string(),
-                path: format!("/book/confirm/{}", &b.id),
-                text: "确认已归还".to_string(),
-            };
-            let act_lost = BookAction {
-                btn_type: "btn-dark".to_string(),
-                method: "post".to_string(),
-                path: format!("/book/lost/{}", &b.id),
-                text: "标记遗失".to_string(),
-            };
-            let act_reset = BookAction {
-                btn_type: "btn-secondary".to_string(),
-                method: "put".to_string(),
-                path: format!("/book/{}", &b.id),
-                text: "重置状态".to_string(),
-            };
-            let act_delete = BookAction {
-                btn_type: "btn-danger".to_string(),
-                method: "delete".to_string(),
-                path: format!("/book/{}", &b.id),
-                text: "删除".to_string(),
-            };
-
-            let mut actions = vec![];
-            match b.state {
-                BookState::Available => {
-                    actions.push(act_borrow);
-                }
-                BookState::Borrowed => {
-                    if let Some(u) = current_user {
-                        if u.uid == b.operator {
-                            actions.push(act_return);
-                        }
-                    }
-                }
-                BookState::Returned => {
-                    actions.push(act_confirm);
-                }
-                BookState::Unknown => {
-                    actions.push(act_reset);
-                }
-                BookState::Lost => {
-                    actions.push(act_reset);
-                }
-                _ => {
-                    actions.push(act_reset);
-                }
-            }
-            actions.push(act_lost);
-            actions.push(act_delete);
-            BookUI {
-                book: b.clone(),
-                actions,
-            }
-        })
+        .map(|b| book_with_actions(b, current_user))
         .collect())
+}
+fn book_with_actions(book: &Book, current_user: &Option<Entity>) -> BookUI {
+    let act_borrow = BookAction {
+        btn_type: "btn-primary".to_string(),
+        method: "post".to_string(),
+        path: format!("/book/borrow/{}", &book.id),
+        text: "借阅".to_string(),
+    };
+    let act_return = BookAction {
+        btn_type: "btn-success".to_string(),
+        method: "post".to_string(),
+        path: format!("/book/return/{}", &book.id),
+        text: "归还".to_string(),
+    };
+    let act_confirm = BookAction {
+        btn_type: "btn-info".to_string(),
+        method: "post".to_string(),
+        path: format!("/book/confirm/{}", &book.id),
+        text: "确认已归还".to_string(),
+    };
+    let act_lost = BookAction {
+        btn_type: "btn-dark".to_string(),
+        method: "post".to_string(),
+        path: format!("/book/lost/{}", &book.id),
+        text: "标记遗失".to_string(),
+    };
+    let act_reset = BookAction {
+        btn_type: "btn-secondary".to_string(),
+        method: "put".to_string(),
+        path: format!("/book/{}", &book.id),
+        text: "重置状态".to_string(),
+    };
+    let act_delete = BookAction {
+        btn_type: "btn-danger".to_string(),
+        method: "delete".to_string(),
+        path: format!("/book/{}", &book.id),
+        text: "删除".to_string(),
+    };
+
+    let mut actions = vec![];
+    match book.state {
+        BookState::Available => {
+            actions.push(act_borrow);
+        }
+        BookState::Borrowed => {
+            if let Some(u) = current_user {
+                if u.uid == book.operator {
+                    actions.push(act_return);
+                }
+            }
+        }
+        BookState::Returned => {
+            actions.push(act_confirm);
+        }
+        BookState::Unknown => {
+            actions.push(act_reset);
+        }
+        BookState::Lost => {
+            actions.push(act_reset);
+        }
+        _ => {
+            actions.push(act_reset);
+        }
+    }
+    actions.push(act_lost);
+    actions.push(act_delete);
+    BookUI {
+        book: book.clone(),
+        actions,
+    }
 }
 
 #[derive(Template)]
@@ -253,6 +256,7 @@ pub struct BookDetailParams {
     book_id: i64,
 }
 pub async fn book_detail(
+    IdentOptional(entity): IdentOptional,
     Path(p): Path<BookDetailParams>,
     State(s): State<AppState>,
 ) -> impl IntoResponse {
@@ -260,15 +264,7 @@ pub async fn book_detail(
 
     let template = BookDetailTemplate {
         current_user: None,
-        item: BookUI {
-            book: b.clone(),
-            actions: vec![BookAction {
-                btn_type: "btn-primary".to_string(),
-                method: "post".to_string(),
-                path: format!("/book/borrow/{}", &b.id),
-                text: "借阅".to_string(),
-            }],
-        },
+        item: book_with_actions(&b, &entity),
     };
     crate::app::common::HtmlTemplate(template)
 }

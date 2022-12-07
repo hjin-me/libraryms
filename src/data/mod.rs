@@ -1,4 +1,6 @@
+pub mod accounts;
 pub mod books;
+pub mod error;
 pub mod ldap;
 
 use bb8::Pool;

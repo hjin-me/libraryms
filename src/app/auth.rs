@@ -2,6 +2,7 @@ use axum::extract::{FromRef, FromRequestParts, TypedHeader};
 use axum::headers::Cookie;
 // use axum::headers::authorization::Bearer;
 use crate::app::AppState;
+use crate::data::accounts::Role;
 use axum::http::request::Parts;
 use axum::http::StatusCode;
 use jsonwebtoken::{decode, DecodingKey, EncodingKey, Validation};
@@ -11,6 +12,7 @@ use serde::{Deserialize, Serialize};
 pub struct Entity {
     pub uid: String,
     pub display_name: String,
+    pub role: Role,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -50,6 +52,7 @@ where
                     Ok(token) => Ok(Self(Entity {
                         uid: token.claims.sub,
                         display_name: "from token".to_string(),
+                        role: Role::User,
                     })),
                     Err(err) => Err((
                         StatusCode::UNAUTHORIZED,
@@ -91,6 +94,7 @@ where
                     return Ok(Self(Some(Entity {
                         uid: token.claims.sub,
                         display_name: "from token".to_string(),
+                        role: Role::User,
                     })));
                 }
             }
