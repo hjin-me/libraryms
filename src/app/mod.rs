@@ -1,10 +1,15 @@
 mod auth;
 mod books;
 mod common;
+mod health;
 mod home;
 pub mod ident;
 
-use crate::app::books::{book_list_get, borrow_book, delete_book, return_book, simple_storage};
+use crate::app::books::{
+    book_list_get, borrow_book, confirm_book, delete_book, lost_book, reset_book, return_book,
+    simple_storage,
+};
+use crate::app::health::liveness;
 use crate::app::ident::{login_get, login_post, save_session_get};
 use crate::data::books::BookMS;
 use crate::data::ldap::LdapIdent;
@@ -16,6 +21,7 @@ use axum::Router;
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use tokio_postgres::NoTls;
+use tracing::info;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -40,15 +46,23 @@ pub async fn start(
     // // build our application with a single route
     let app = Router::new()
         .route("/", get(home::home))
-        .route("/liveness", get(|| async { "I'm alive!" }))
-        .route("/readiness", get(|| async { "I'm ready!" }))
+        .route("/liveness", get(liveness))
+        .route(
+            "/readiness",
+            get(|| async {
+                info!("GET /readiness");
+                "I'm ready!"
+            }),
+        )
         .route("/authentication", get(login_get).post(login_post))
         .route("/auth-code", get(save_session_get))
         .route("/books", get(book_list_get))
         .route("/book/fast-import", post(simple_storage))
-        .route("/book/:book_id", delete(delete_book))
+        .route("/book/:book_id", delete(delete_book).put(reset_book))
         .route("/book/borrow/:book_id", post(borrow_book))
         .route("/book/return/:book_id", post(return_book))
+        .route("/book/confirm/:book_id", post(confirm_book))
+        .route("/book/lost/:book_id", post(lost_book))
         .with_state(app_state);
 
     // run it with hyper on localhost:3000

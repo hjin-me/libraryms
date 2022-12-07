@@ -59,6 +59,22 @@ pub async fn delete_book(
     crate::app::common::HtmlTemplate(template)
 }
 #[derive(Deserialize, Serialize)]
+pub struct ResetParams {
+    book_id: i64,
+}
+pub async fn reset_book(
+    IdentRequire(u): IdentRequire,
+    State(s): State<AppState>,
+    Path(p): Path<ResetParams>,
+) -> impl IntoResponse {
+    let bms = s.book_ms;
+    bms.reset(&p.book_id, &u.uid).await.unwrap();
+    let template = BooksTableTemplate {
+        books: handle_book_table(&bms, &0, &1000, &Some(u)).await.unwrap(),
+    };
+    crate::app::common::HtmlTemplate(template)
+}
+#[derive(Deserialize, Serialize)]
 pub struct BorrowParams {
     book_id: i64,
 }
@@ -101,7 +117,24 @@ pub async fn confirm_book(
     Path(p): Path<ConfirmParams>,
 ) -> impl IntoResponse {
     let bms = s.book_ms;
-    bms.revert_to(&p.book_id, &u.uid).await.unwrap();
+    bms.confirm(&p.book_id, &u.uid).await.unwrap();
+    let template = BooksTableTemplate {
+        books: handle_book_table(&bms, &0, &1000, &Some(u)).await.unwrap(),
+    };
+    crate::app::common::HtmlTemplate(template)
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct LostParams {
+    book_id: i64,
+}
+pub async fn lost_book(
+    IdentRequire(u): IdentRequire,
+    State(s): State<AppState>,
+    Path(p): Path<LostParams>,
+) -> impl IntoResponse {
+    let bms = s.book_ms;
+    bms.lost(&p.book_id, &u.uid).await.unwrap();
     let template = BooksTableTemplate {
         books: handle_book_table(&bms, &0, &1000, &Some(u)).await.unwrap(),
     };
@@ -199,6 +232,8 @@ async fn handle_book_table(
                     actions.push(act_reset);
                 }
             }
+            actions.push(act_lost);
+            actions.push(act_delete);
             BookUI {
                 book: b.clone(),
                 actions,

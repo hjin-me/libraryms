@@ -243,6 +243,87 @@ impl BookMS {
         tc.commit().await?;
         Ok(())
     }
+
+    pub async fn confirm(
+        &self,
+        book_id: &i64,
+        who: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut client = self.pg.get().await?;
+        let tc = client.transaction().await?;
+        let oid: i64 = tc
+            .query_one(
+                "INSERT INTO change_logs (operator, source_id, source_type, action, operate_at)
+                            VALUES ($1, $2, $3, $4, $5) RETURNING id",
+                &[
+                    &who,
+                    &book_id,
+                    &"book",
+                    &"确认书籍已经归还",
+                    &time::OffsetDateTime::now_utc(),
+                ],
+            )
+            .await?
+            .get(0);
+        tc.execute(
+            "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and deleted_at is null",
+            &[&BookState::Available.to_string(), &oid, &book_id],
+        )
+        .await?;
+        tc.commit().await?;
+        Ok(())
+    }
+    pub async fn lost(&self, book_id: &i64, who: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let mut client = self.pg.get().await?;
+        let tc = client.transaction().await?;
+        let oid: i64 = tc
+            .query_one(
+                "INSERT INTO change_logs (operator, source_id, source_type, action, operate_at)
+                            VALUES ($1, $2, $3, $4, $5) RETURNING id",
+                &[
+                    &who,
+                    &book_id,
+                    &"book",
+                    &"书籍被标记为遗失",
+                    &time::OffsetDateTime::now_utc(),
+                ],
+            )
+            .await?
+            .get(0);
+        tc.execute(
+            "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and deleted_at is null",
+            &[&BookState::Lost.to_string(), &oid, &book_id],
+        )
+        .await?;
+        tc.commit().await?;
+        Ok(())
+    }
+
+    pub async fn reset(&self, book_id: &i64, who: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let mut client = self.pg.get().await?;
+        let tc = client.transaction().await?;
+        let oid: i64 = tc
+            .query_one(
+                "INSERT INTO change_logs (operator, source_id, source_type, action, operate_at)
+                            VALUES ($1, $2, $3, $4, $5) RETURNING id",
+                &[
+                    &who,
+                    &book_id,
+                    &"book",
+                    &"书籍状态被重置",
+                    &time::OffsetDateTime::now_utc(),
+                ],
+            )
+            .await?
+            .get(0);
+        tc.execute(
+            "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and deleted_at is null",
+            &[&BookState::Available.to_string(), &oid, &book_id],
+        )
+        .await?;
+        tc.commit().await?;
+        Ok(())
+    }
 }
 // ISBN response
 //
