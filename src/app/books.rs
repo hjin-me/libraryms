@@ -241,3 +241,34 @@ async fn handle_book_table(
         })
         .collect())
 }
+
+#[derive(Template)]
+#[template(path = "book_detail.html")]
+struct BookDetailTemplate {
+    current_user: Option<Entity>,
+    item: BookUI,
+}
+#[derive(Deserialize, Serialize)]
+pub struct BookDetailParams {
+    book_id: i64,
+}
+pub async fn book_detail(
+    Path(p): Path<BookDetailParams>,
+    State(s): State<AppState>,
+) -> impl IntoResponse {
+    let b = s.book_ms.get_one_by_id(&p.book_id).await.unwrap();
+
+    let template = BookDetailTemplate {
+        current_user: None,
+        item: BookUI {
+            book: b.clone(),
+            actions: vec![BookAction {
+                btn_type: "btn-primary".to_string(),
+                method: "post".to_string(),
+                path: format!("/book/borrow/{}", &b.id),
+                text: "借阅".to_string(),
+            }],
+        },
+    };
+    crate::app::common::HtmlTemplate(template)
+}

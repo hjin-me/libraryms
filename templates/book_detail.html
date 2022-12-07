@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div>
+        <div class="btn-group" role="group" aria-label="Basic example">
+            {% for act in item.actions %}
+            <button type="button" class="btn {{act.btn_type}} btn-sm"
+                    hx-{{act.method}}="{{act.path}}" hx-target="#books-table"
+            >{{act.text}}
+            </button>
+            {% endfor %}
+            <button type="button" class="btn btn-primary">Right</button>
+        </div>
+
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <span>{{item.book.id}}</span>
+            <span><span class="ellipsis">{{item.book.title}}</span></span>
+            <span>{{item.book.authors|join(", ")}}</span>
+            <span>{{item.book.state}}</span>
+            <span>{{item.book.operator}}</span>
+            <span>{{item.book.operate_at|date_fmt("[year]/[month]/[day]")}}</span>
+            <span>{{item.book.isbn}}</span>
+            <span>{{item.book.publisher}}</span>
+            <span>{{item.book.import_at|date_fmt("[year]/[month]/[day]")}}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

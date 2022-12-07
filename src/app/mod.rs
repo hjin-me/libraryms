@@ -6,8 +6,8 @@ mod home;
 pub mod ident;
 
 use crate::app::books::{
-    book_list_get, borrow_book, confirm_book, delete_book, lost_book, reset_book, return_book,
-    simple_storage,
+    book_detail, book_list_get, borrow_book, confirm_book, delete_book, lost_book, reset_book,
+    return_book, simple_storage,
 };
 use crate::app::health::liveness;
 use crate::app::ident::{login_get, login_post, save_session_get};
@@ -58,7 +58,10 @@ pub async fn start(
         .route("/auth-code", get(save_session_get))
         .route("/books", get(book_list_get))
         .route("/book/fast-import", post(simple_storage))
-        .route("/book/:book_id", delete(delete_book).put(reset_book))
+        .route(
+            "/book/:book_id",
+            delete(delete_book).put(reset_book).get(book_detail),
+        )
         .route("/book/borrow/:book_id", post(borrow_book))
         .route("/book/return/:book_id", post(return_book))
         .route("/book/confirm/:book_id", post(confirm_book))

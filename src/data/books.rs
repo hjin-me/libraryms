@@ -2,7 +2,6 @@ use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use tokio_postgres::row::RowIndex;
 use tokio_postgres::NoTls;
 use tracing::trace;
 
@@ -94,6 +93,29 @@ impl BookMS {
             api_key: api_key.clone().to_string(),
         }
     }
+    pub async fn get_one_by_id(&self, book_id: &i64) -> Result<Book, Box<dyn std::error::Error>> {
+        let conn = self.pg.get().await?;
+        let row = conn
+            .query_one(
+                "SELECT b.id, b.isbn, b.title, b.authors, b.publisher, b.created_at, b.state, cl.operator, cl.operate_at FROM books b
+    LEFT JOIN change_logs cl on b.log_id = cl.id WHERE b.id = $1 AND b.deleted_at is null ORDER BY b.created_at desc LIMIT 1",
+                &[&book_id],
+            )
+            .await?;
+        let book = Book {
+            id: row.get(0),
+            isbn: row.get(1),
+            title: row.get(2),
+            authors: row.get(3),
+            publisher: row.get(4),
+            import_at: row.get(5),
+            state: BookState::from_str(row.get::<_, &str>(6)),
+            operator: row.get(7),
+            operate_at: row.get(8),
+        };
+        Ok(book)
+    }
+
     pub async fn list(
         &self,
         limit: &i64,
