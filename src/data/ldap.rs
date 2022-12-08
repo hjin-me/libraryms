@@ -9,6 +9,12 @@ pub struct LdapIdent {
     attr: String,
 }
 
+#[derive(Clone)]
+pub struct AccountInfo {
+    pub uid: String,
+    pub display_name: String,
+}
+
 impl LdapIdent {
     pub async fn new(
         url: &str,
@@ -44,7 +50,7 @@ impl LdapIdent {
                 &self.base_dn,
                 Scope::Subtree,
                 &filter,
-                vec!["uid", "displayName", "cn", "dn"],
+                vec!["uid", "displayName", "cn", "dn", &self.attr],
             )
             .await?;
         let mut r = Vec::new();
@@ -54,30 +60,35 @@ impl LdapIdent {
         }
         Ok(r)
     }
-    async fn sync_account(&mut self) -> Result<()> {
+    pub async fn all_accounts(&mut self) -> Result<Vec<AccountInfo>> {
         let SearchResult(rs, _) = self
             .ldap
             .search(
                 &self.base_dn,
                 Scope::Subtree,
                 &format!("({}={})", self.attr, "*"),
-                vec!["uid", "displayName", "cn", "dn"],
+                vec!["uid", "displayName", "cn", "dn", &self.attr],
             )
             .await?;
-        for entry in rs {
-            let entry = SearchEntry::construct(entry);
-            let uid = entry.attrs.get("uid").unwrap().get(0).unwrap().to_string();
-            let cn = entry.attrs.get("cn").unwrap().get(0).unwrap().to_string();
-            let dn = entry.dn;
-            let display_name = entry
-                .attrs
-                .get("displayName")
-                .unwrap()
-                .get(0)
-                .unwrap()
-                .to_string();
-        }
-        Ok(())
+
+        Ok(rs
+            .iter()
+            .map(|entry| {
+                let entry = SearchEntry::construct(entry.clone());
+                let uid = entry
+                    .attrs
+                    .get(&self.attr)
+                    .unwrap()
+                    .get(0)
+                    .unwrap()
+                    .to_string();
+                let display_name = match entry.attrs.get("displayName") {
+                    Some(v) => v.get(0).unwrap_or(&uid).to_string(),
+                    None => uid.clone(),
+                };
+                AccountInfo { uid, display_name }
+            })
+            .collect())
     }
 }
 // async fn search()

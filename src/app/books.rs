@@ -1,6 +1,7 @@
 use crate::app::auth::{Entity, IdentOptional, IdentRequire};
 use crate::app::common::filters;
 use crate::app::AppState;
+use crate::data::accounts::Role;
 use crate::data::books::{Book, BookMS, BookState};
 use askama::Template;
 use axum::extract::{Form, Path, State};
@@ -211,34 +212,31 @@ fn book_with_actions(book: &Book, current_user: &Option<Entity>) -> BookUI {
         path: format!("/book/{}", &book.id),
         text: "删除".to_string(),
     };
-
+    let current_uid = current_user
+        .as_ref()
+        .map(|u| u.uid.clone())
+        .unwrap_or("".to_string());
+    let role = current_user
+        .as_ref()
+        .map(|u| u.role.clone())
+        .unwrap_or(Role::User);
     let mut actions = vec![];
-    match book.state {
-        BookState::Available => {
-            actions.push(act_borrow);
-        }
-        BookState::Borrowed => {
-            if let Some(u) = current_user {
-                if u.uid == book.operator {
-                    actions.push(act_return);
-                }
-            }
-        }
-        BookState::Returned => {
-            actions.push(act_confirm);
-        }
-        BookState::Unknown => {
-            actions.push(act_reset);
-        }
-        BookState::Lost => {
-            actions.push(act_reset);
-        }
-        _ => {
-            actions.push(act_reset);
-        }
+    if book.state == BookState::Available && current_uid != "" {
+        actions.push(act_borrow);
     }
-    actions.push(act_lost);
-    actions.push(act_delete);
+    if book.state == BookState::Borrowed && current_uid == book.operator {
+        actions.push(act_return);
+    }
+    if book.state == BookState::Returned && role == Role::Admin {
+        actions.push(act_confirm);
+    }
+    if book.state == BookState::Lost && role == Role::Admin {
+        actions.push(act_reset);
+    }
+    if role == Role::Admin {
+        actions.push(act_lost);
+        actions.push(act_delete);
+    }
     BookUI {
         book: book.clone(),
         actions,

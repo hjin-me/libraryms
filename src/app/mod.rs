@@ -1,3 +1,4 @@
+mod accounts;
 mod auth;
 mod books;
 mod common;
@@ -5,12 +6,13 @@ mod health;
 mod home;
 pub mod ident;
 
+use crate::app::accounts::sync_accounts;
 use crate::app::books::{
     book_detail, book_list_get, borrow_book, confirm_book, delete_book, lost_book, reset_book,
     return_book, simple_storage,
 };
 use crate::app::health::liveness;
-use crate::app::ident::{login_get, login_post, save_session_get};
+use crate::app::ident::{login_get, login_post, remove_session_get, save_session_get};
 use crate::data::books::BookMS;
 use crate::data::ldap::LdapIdent;
 use axum::extract::{FromRef, FromRequestParts};
@@ -56,6 +58,8 @@ pub async fn start(
         )
         .route("/authentication", get(login_get).post(login_post))
         .route("/auth-code", get(save_session_get))
+        .route("/logout", get(remove_session_get))
+        .route("/accounts/sync", get(sync_accounts))
         .route("/books", get(book_list_get))
         .route("/book/fast-import", post(simple_storage))
         .route(

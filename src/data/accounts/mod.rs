@@ -9,7 +9,7 @@ struct AccountModel {
     pub role: String,
     pub created_at: time::OffsetDateTime,
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Role {
     Admin,
     User,
@@ -63,4 +63,30 @@ impl Account {
         .map_err(|e| data::error::with_msg(Some(e), "插入账户失败"))?;
         Ok(())
     }
+}
+pub struct AccountInfo {
+    pub id: String,
+    pub display_name: String,
+    pub role: Role,
+}
+pub async fn get_account_by_id(
+    pool: &Pool<PostgresConnectionManager<NoTls>>,
+    id: &str,
+) -> Result<AccountInfo, data::error::Error> {
+    let conn = pool
+        .get()
+        .await
+        .map_err(|e| data::error::with_msg(Some(e), "获取数据库连接失败"))?;
+    let rs = conn
+        .query_one(
+            "SELECT id, display_name, role FROM accounts WHERE id = $1 LIMIT 1",
+            &[&id],
+        )
+        .await
+        .map_err(|e| data::error::with_msg(Some(e), "查询账户失败"))?;
+    Ok(AccountInfo {
+        id: rs.get(0),
+        display_name: rs.get(1),
+        role: Role::from_str(rs.get::<_, &str>(2)).unwrap_or(Role::User),
+    })
 }

@@ -2,7 +2,7 @@ use axum::extract::{FromRef, FromRequestParts, TypedHeader};
 use axum::headers::Cookie;
 // use axum::headers::authorization::Bearer;
 use crate::app::AppState;
-use crate::data::accounts::Role;
+use crate::data::accounts::{get_account_by_id, Role};
 use axum::http::request::Parts;
 use axum::http::StatusCode;
 use jsonwebtoken::{decode, DecodingKey, EncodingKey, Validation};
@@ -49,11 +49,18 @@ where
                     &DecodingKey::from_secret(&app_state.session_secret.as_bytes()),
                     &Validation::default(),
                 ) {
-                    Ok(token) => Ok(Self(Entity {
-                        uid: token.claims.sub,
-                        display_name: "from token".to_string(),
-                        role: Role::User,
-                    })),
+                    Ok(token) => {
+                        match get_account_by_id(&app_state.pool, &token.claims.sub).await {
+                            Ok(ac) => Ok(Self(Entity {
+                                uid: ac.id,
+                                display_name: ac.display_name,
+                                role: ac.role,
+                            })),
+                            Err(e) => {
+                                Err((StatusCode::UNAUTHORIZED, format!("身份认证失败, {}", e)))
+                            }
+                        }
+                    }
                     Err(err) => Err((
                         StatusCode::UNAUTHORIZED,
                         format!("Failed to decode token. Error: {}", err),
@@ -91,11 +98,13 @@ where
                     &DecodingKey::from_secret(&app_state.session_secret.as_bytes()),
                     &Validation::default(),
                 ) {
-                    return Ok(Self(Some(Entity {
-                        uid: token.claims.sub,
-                        display_name: "from token".to_string(),
-                        role: Role::User,
-                    })));
+                    if let Ok(ac) = get_account_by_id(&app_state.pool, &token.claims.sub).await {
+                        return Ok(Self(Some(Entity {
+                            uid: ac.id,
+                            display_name: ac.display_name,
+                            role: ac.role,
+                        })));
+                    }
                 }
             }
         }

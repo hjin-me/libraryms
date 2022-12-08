@@ -6,7 +6,7 @@ use std::fmt;
 use tokio_postgres::NoTls;
 use tracing::trace;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum BookState {
     Available,
     Borrowed,

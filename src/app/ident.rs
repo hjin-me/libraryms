@@ -30,6 +30,19 @@ pub async fn save_session_get(
         "success",
     )
 }
+pub async fn remove_session_get() -> impl IntoResponse {
+    (
+        StatusCode::FOUND,
+        AppendHeaders([
+            (LOCATION, "/".to_string()),
+            (
+                SET_COOKIE,
+                format!("x-token=invalid;path=/;Expires=Wed, 21 Oct 2000 07:28:00 GMT",),
+            ),
+        ]),
+        "success",
+    )
+}
 
 pub async fn login_get(Query(q): Query<MsgParams>) -> impl IntoResponse {
     let template = PageTemplate {
