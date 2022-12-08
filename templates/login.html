@@ -16,13 +16,13 @@
     </div>
 </nav>
 <div class="container">
-    {% if msg !=  "" %}
+    {% if msg != "" %}
     <div class="alert alert-warning" role="alert">
         {{ msg }}
     </div>
     {% endif %}
     <!-- Content here -->
-    <form hx-post="/authentication" hx-target="this" hx-swap="outerHTML">
+    <form method="post" hx-post="/authentication" hx-target="this" hx-swap="outerHTML">
         <div class="mb-3">
             <label for="username" class="form-label">用户名</label>
             <input type="text" class="form-control" name="username" id="username">
@@ -30,7 +30,7 @@
         </div>
         <div class="mb-3">
             <label for="password" class="form-label">密码</label>
-            <input type="tel" class="form-control" name="password" id="password">
+            <input type="password" class="form-control" name="password" id="password">
             <div class="form-text">嘿嘿嘿</div>
         </div>
         <button type="submit" class="btn btn-primary">登录</button>

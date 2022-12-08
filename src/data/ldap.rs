@@ -1,4 +1,3 @@
-use crate::data::accounts::Account;
 use ldap3::result::Result;
 use ldap3::{Ldap, LdapConnAsync, Scope, SearchEntry, SearchResult};
 

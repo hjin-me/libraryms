@@ -70,7 +70,7 @@ pub async fn login_post(
         .ldap
         .bind(&v.username, &v.password)
         .await
-        .map_err(|e| {
+        .map_err(|_| {
             let msg: String = byte_serialize("登陆失败".as_bytes()).collect();
             (
                 StatusCode::OK,

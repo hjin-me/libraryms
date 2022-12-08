@@ -1,4 +1,4 @@
-use crate::app::auth::IdentRequire;
+use crate::app::auth::IdentAdminRequire;
 use crate::app::AppState;
 use crate::data::accounts::{Account, Role};
 use axum::extract::State;
@@ -6,7 +6,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 
 pub async fn sync_accounts(
-    IdentRequire(_): IdentRequire,
+    IdentAdminRequire(_): IdentAdminRequire,
     State(mut s): State<AppState>,
 ) -> impl IntoResponse {
     let acs = s.ldap.all_accounts().await.expect("获取全部LDAP账户失败");

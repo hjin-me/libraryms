@@ -1,4 +1,4 @@
-use crate::app::auth::{Entity, IdentOptional, IdentRequire};
+use crate::app::auth::{Entity, IdentAdminRequire, IdentOptional, IdentRequire};
 use crate::app::common::filters;
 use crate::app::AppState;
 use crate::data::accounts::Role;
@@ -32,7 +32,7 @@ pub struct SimpleStorageParams {
 }
 
 pub async fn simple_storage(
-    IdentRequire(u): IdentRequire,
+    IdentAdminRequire(u): IdentAdminRequire,
     State(s): State<AppState>,
     Form(p): Form<SimpleStorageParams>,
 ) -> impl IntoResponse {
@@ -50,7 +50,7 @@ pub struct DeleteParams {
     book_id: i64,
 }
 pub async fn delete_book(
-    IdentRequire(u): IdentRequire,
+    IdentAdminRequire(u): IdentAdminRequire,
     State(s): State<AppState>,
     Path(p): Path<DeleteParams>,
 ) -> impl IntoResponse {
@@ -66,7 +66,7 @@ pub struct ResetParams {
     book_id: i64,
 }
 pub async fn reset_book(
-    IdentRequire(u): IdentRequire,
+    IdentAdminRequire(u): IdentAdminRequire,
     State(s): State<AppState>,
     Path(p): Path<ResetParams>,
 ) -> impl IntoResponse {
@@ -115,7 +115,7 @@ pub struct ConfirmParams {
     book_id: i64,
 }
 pub async fn confirm_book(
-    IdentRequire(u): IdentRequire,
+    IdentAdminRequire(u): IdentAdminRequire,
     State(s): State<AppState>,
     Path(p): Path<ConfirmParams>,
 ) -> impl IntoResponse {
@@ -132,7 +132,7 @@ pub struct LostParams {
     book_id: i64,
 }
 pub async fn lost_book(
-    IdentRequire(u): IdentRequire,
+    IdentAdminRequire(u): IdentAdminRequire,
     State(s): State<AppState>,
     Path(p): Path<LostParams>,
 ) -> impl IntoResponse {

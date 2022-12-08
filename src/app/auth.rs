@@ -7,6 +7,7 @@ use axum::http::request::Parts;
 use axum::http::StatusCode;
 use jsonwebtoken::{decode, DecodingKey, EncodingKey, Validation};
 use serde::{Deserialize, Serialize};
+use tracing::trace;
 
 #[derive(Clone, Debug)]
 pub struct Entity {
@@ -38,42 +39,10 @@ where
     type Rejection = (StatusCode, String);
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let TypedHeader(cookies) = TypedHeader::<Cookie>::from_request_parts(parts, state)
-            .await
-            .map_err(|e| (StatusCode::UNAUTHORIZED, format!("身份认证失败, {}", e)))?;
-        match cookies.get("x-token") {
-            Some(token) => {
-                let app_state = AppState::from_ref(state);
-                match decode::<Claims>(
-                    &token,
-                    &DecodingKey::from_secret(&app_state.session_secret.as_bytes()),
-                    &Validation::default(),
-                ) {
-                    Ok(token) => {
-                        match get_account_by_id(&app_state.pool, &token.claims.sub).await {
-                            Ok(ac) => Ok(Self(Entity {
-                                uid: ac.id,
-                                display_name: ac.display_name,
-                                role: ac.role,
-                            })),
-                            Err(e) => {
-                                Err((StatusCode::UNAUTHORIZED, format!("身份认证失败, {}", e)))
-                            }
-                        }
-                    }
-                    Err(err) => Err((
-                        StatusCode::UNAUTHORIZED,
-                        format!("Failed to decode token. Error: {}", err),
-                    )),
-                }
-            }
-            None => Err((StatusCode::UNAUTHORIZED, format!("身份认证失败"))),
+        match token_from_cookies(parts, state).await {
+            Some(e) => Ok(Self(e)),
+            None => Err((StatusCode::UNAUTHORIZED, "身份认证失败".to_string())),
         }
-        // You can either call them directly...
-        // match TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state).await {
-        //     Ok(TypedHeader(Authorization(token_encoded))) => {
-        //     }
-        // }
     }
 }
 
@@ -88,27 +57,74 @@ where
     type Rejection = (StatusCode, String);
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        if let Ok(TypedHeader(cookies)) =
-            TypedHeader::<Cookie>::from_request_parts(parts, state).await
-        {
-            if let Some(token) = cookies.get("x-token") {
+        Ok(Self(token_from_cookies(parts, state).await))
+    }
+}
+
+// we can also write a custom extractor that grabs a connection from the pool
+// which setup is appropriate depends on your application
+pub struct IdentAdminRequire(pub Entity);
+
+#[axum::async_trait]
+impl<S> FromRequestParts<S> for IdentAdminRequire
+where
+    AppState: FromRef<S>,
+    S: Send + Sync,
+{
+    type Rejection = (StatusCode, String);
+
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        match token_from_cookies(parts, state).await {
+            Some(e) => {
+                if e.role == Role::Admin {
+                    Ok(Self(e))
+                } else {
+                    Err((StatusCode::UNAUTHORIZED, "权限不够".to_string()))
+                }
+            }
+            None => Err((StatusCode::UNAUTHORIZED, "身份认证失败".to_string())),
+        }
+        // You can either call them directly...
+        // match TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state).await {
+        //     Ok(TypedHeader(Authorization(token_encoded))) => {
+        //     }
+        // }
+    }
+}
+
+async fn token_from_cookies<S>(parts: &mut Parts, state: &S) -> Option<Entity>
+where
+    AppState: FromRef<S>,
+    S: Send + Sync,
+{
+    match TypedHeader::<Cookie>::from_request_parts(parts, state).await {
+        Ok(TypedHeader(cookies)) => match cookies.get("x-token") {
+            Some(token) => {
                 let app_state = AppState::from_ref(state);
-                if let Ok(token) = decode::<Claims>(
+                match decode::<Claims>(
                     &token,
                     &DecodingKey::from_secret(&app_state.session_secret.as_bytes()),
                     &Validation::default(),
                 ) {
-                    if let Ok(ac) = get_account_by_id(&app_state.pool, &token.claims.sub).await {
-                        return Ok(Self(Some(Entity {
-                            uid: ac.id,
-                            display_name: ac.display_name,
-                            role: ac.role,
-                        })));
+                    Ok(token) => {
+                        match get_account_by_id(&app_state.pool, &token.claims.sub).await {
+                            Ok(ac) => Some(Entity {
+                                uid: ac.id,
+                                display_name: ac.display_name,
+                                role: ac.role,
+                            }),
+                            Err(_) => {
+                                trace!("数据库查找用户失败");
+                                None
+                            }
+                        }
                     }
+                    Err(_) => None,
                 }
             }
-        }
-        Ok(Self(None))
+            None => None,
+        },
+        Err(_) => None,
     }
 }
 
