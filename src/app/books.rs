@@ -5,6 +5,7 @@ use crate::data::accounts::Role;
 use crate::data::books::{Book, BookMS, BookState};
 use askama::Template;
 use axum::extract::{Form, Path, State};
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use serde_derive::{Deserialize, Serialize};
 
@@ -56,10 +57,7 @@ pub async fn delete_book(
 ) -> impl IntoResponse {
     let bms = s.book_ms;
     bms.delete(&p.book_id, &u.uid).await.unwrap();
-    let template = BooksTableTemplate {
-        books: handle_book_table(&bms, &0, &1000, &Some(u)).await.unwrap(),
-    };
-    crate::app::common::HtmlTemplate(template)
+    (StatusCode::NO_CONTENT, [("HX-Refresh", "true")])
 }
 #[derive(Deserialize, Serialize)]
 pub struct ResetParams {
@@ -72,10 +70,7 @@ pub async fn reset_book(
 ) -> impl IntoResponse {
     let bms = s.book_ms;
     bms.reset(&p.book_id, &u.uid).await.unwrap();
-    let template = BooksTableTemplate {
-        books: handle_book_table(&bms, &0, &1000, &Some(u)).await.unwrap(),
-    };
-    crate::app::common::HtmlTemplate(template)
+    (StatusCode::NO_CONTENT, [("HX-Refresh", "true")])
 }
 #[derive(Deserialize, Serialize)]
 pub struct BorrowParams {
@@ -88,10 +83,7 @@ pub async fn borrow_book(
 ) -> impl IntoResponse {
     let bms = s.book_ms;
     bms.borrow(&p.book_id, &u.uid).await.unwrap();
-    let template = BooksTableTemplate {
-        books: handle_book_table(&bms, &0, &1000, &Some(u)).await.unwrap(),
-    };
-    crate::app::common::HtmlTemplate(template)
+    (StatusCode::NO_CONTENT, [("HX-Refresh", "true")])
 }
 #[derive(Deserialize, Serialize)]
 pub struct ReturnParams {
@@ -104,10 +96,7 @@ pub async fn return_book(
 ) -> impl IntoResponse {
     let bms = s.book_ms;
     bms.revert_to(&p.book_id, &u.uid).await.unwrap();
-    let template = BooksTableTemplate {
-        books: handle_book_table(&bms, &0, &1000, &Some(u)).await.unwrap(),
-    };
-    crate::app::common::HtmlTemplate(template)
+    (StatusCode::NO_CONTENT, [("HX-Refresh", "true")])
 }
 
 #[derive(Deserialize, Serialize)]
@@ -121,10 +110,7 @@ pub async fn confirm_book(
 ) -> impl IntoResponse {
     let bms = s.book_ms;
     bms.confirm(&p.book_id, &u.uid).await.unwrap();
-    let template = BooksTableTemplate {
-        books: handle_book_table(&bms, &0, &1000, &Some(u)).await.unwrap(),
-    };
-    crate::app::common::HtmlTemplate(template)
+    (StatusCode::NO_CONTENT, [("HX-Refresh", "true")])
 }
 
 #[derive(Deserialize, Serialize)]
@@ -138,10 +124,7 @@ pub async fn lost_book(
 ) -> impl IntoResponse {
     let bms = s.book_ms;
     bms.lost(&p.book_id, &u.uid).await.unwrap();
-    let template = BooksTableTemplate {
-        books: handle_book_table(&bms, &0, &1000, &Some(u)).await.unwrap(),
-    };
-    crate::app::common::HtmlTemplate(template)
+    (StatusCode::NO_CONTENT, [("HX-Refresh", "true")])
 }
 
 #[derive(Template)]
@@ -261,7 +244,7 @@ pub async fn book_detail(
     let b = s.book_ms.get_one_by_id(&p.book_id).await.unwrap();
 
     let template = BookDetailTemplate {
-        current_user: None,
+        current_user: entity.clone(),
         item: book_with_actions(&b, &entity),
     };
     crate::app::common::HtmlTemplate(template)

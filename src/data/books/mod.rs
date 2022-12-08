@@ -80,7 +80,9 @@ pub struct Book {
     pub import_at: time::OffsetDateTime,
     pub state: BookState,
     pub operator: String,
+    pub operator_name: String,
     pub operate_at: time::OffsetDateTime,
+    pub thumbnail: String,
 }
 #[derive(Clone)]
 pub struct BookMS {
@@ -98,8 +100,24 @@ impl BookMS {
         let conn = self.pg.get().await?;
         let row = conn
             .query_one(
-                "SELECT b.id, b.isbn, b.title, b.authors, b.publisher, b.created_at, b.state, cl.operator, cl.operate_at FROM books b
-    LEFT JOIN change_logs cl on b.log_id = cl.id WHERE b.id = $1 AND b.deleted_at is null ORDER BY b.created_at desc LIMIT 1",
+                "SELECT b.id,
+       b.isbn,
+       b.title,
+       b.authors,
+       b.publisher,
+       b.created_at,
+       b.state,
+       cl.operator,
+       a.display_name,
+       cl.operate_at,
+       b.thumbnail
+FROM books b
+         LEFT JOIN change_logs cl on b.log_id = cl.id
+         LEFT JOIN accounts a on a.id = cl.operator
+WHERE b.id = $1
+  AND b.deleted_at is null
+ORDER BY b.created_at desc
+LIMIT 1",
                 &[&book_id],
             )
             .await?;
@@ -112,7 +130,9 @@ impl BookMS {
             import_at: row.get(5),
             state: BookState::from_str(row.get::<_, &str>(6)),
             operator: row.get(7),
-            operate_at: row.get(8),
+            operator_name: row.get(8),
+            operate_at: row.get(9),
+            thumbnail: row.get(10),
         };
         Ok(book)
     }
@@ -125,8 +145,23 @@ impl BookMS {
         let conn = self.pg.get().await?;
         let book_rows = conn
             .query(
-                "SELECT b.id, b.isbn, b.title, b.authors, b.publisher, b.created_at, b.state, cl.operator, cl.operate_at FROM books b
-    LEFT JOIN change_logs cl on b.log_id = cl.id WHERE b.deleted_at is null ORDER BY b.created_at desc LIMIT $1 OFFSET $2 ",
+                "SELECT b.id,
+       b.isbn,
+       b.title,
+       b.authors,
+       b.publisher,
+       b.created_at,
+       b.state,
+       cl.operator,
+       a.display_name,
+       cl.operate_at,
+       b.thumbnail
+FROM books b
+         LEFT JOIN change_logs cl on b.log_id = cl.id
+         LEFT JOIN accounts a on a.id = cl.operator
+WHERE b.deleted_at is null
+ORDER BY b.created_at desc
+LIMIT $1 OFFSET $2 ",
                 &[&limit, &offset],
             )
             .await?;
@@ -141,7 +176,9 @@ impl BookMS {
                 import_at: row.get(5),
                 state: BookState::from_str(row.get::<_, &str>(6)),
                 operator: row.get(7),
-                operate_at: row.get(8),
+                operator_name: row.get(8),
+                operate_at: row.get(9),
+                thumbnail: row.get(10),
             })
             .collect();
         Ok(books)

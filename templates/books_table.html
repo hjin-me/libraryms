@@ -26,10 +26,10 @@
     {% for item in books %}
     <tr>
         <th scope="row">{{item.book.id}}</th>
-        <td><span class="ellipsis">{{item.book.title}}</span></td>
+        <td><a href="/book/{{item.book.id}}"><span class="ellipsis">{{item.book.title}}</span></a></td>
         <td>{{item.book.authors|join(", ")}}</td>
         <td>{{item.book.state}}</td>
-        <td>{{item.book.operator}}</td>
+        <td>{{item.book.operator_name}}</td>
         <td>{{item.book.operate_at|date_fmt("[year]/[month]/[day]")}}</td>
         <td>{{item.book.isbn}}</td>
         <td>{{item.book.publisher}}</td>
@@ -37,7 +37,7 @@
         <td>
             {% for act in item.actions %}
             <button type="button" class="btn {{act.btn_type}} btn-sm"
-                    hx-{{act.method}}="{{act.path}}" hx-target="#books-table"
+                    hx-{{act.method}}="{{act.path}}"
             >{{act.text}}
             </button>
             {% endfor %}

@@ -1,30 +1,30 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container">
-    <div>
-        <div class="btn-group" role="group" aria-label="Basic example">
-            {% for act in item.actions %}
-            <button type="button" class="btn {{act.btn_type}} btn-sm"
-                    hx-{{act.method}}="{{act.path}}" hx-target="#books-table"
-            >{{act.text}}
-            </button>
-            {% endfor %}
-            <button type="button" class="btn btn-primary">Right</button>
-        </div>
 
-    </div>
 
     <div class="row">
-        <div class="col-12">
-            <span>{{item.book.id}}</span>
-            <span><span class="ellipsis">{{item.book.title}}</span></span>
-            <span>{{item.book.authors|join(", ")}}</span>
-            <span>{{item.book.state}}</span>
-            <span>{{item.book.operator}}</span>
-            <span>{{item.book.operate_at|date_fmt("[year]/[month]/[day]")}}</span>
-            <span>{{item.book.isbn}}</span>
-            <span>{{item.book.publisher}}</span>
-            <span>{{item.book.import_at|date_fmt("[year]/[month]/[day]")}}</span>
+        <div class="col-3">
+            <img src="{{item.book.thumbnail}}" rel="noreferrer" referrerpolicy="no-referrer" class="img-thumbnail"
+                 alt="没找到缩略图">
+        </div>
+        <div class="col-9">
+            <h3>{{item.book.title}}</h3>
+            <p>作者：{{item.book.authors|join(", ")}}</p>
+            <p>ISBN: {{item.book.isbn}}</p>
+            <p>出版商：{{item.book.publisher}}</p>
+
+            <p>
+                {% for act in item.actions %}
+                <button type="button" class="btn {{act.btn_type}} btn-sm"
+                        hx-{{act.method}}="{{act.path}}"
+                >{{act.text}}
+                </button>
+                {% endfor %}
+            </p>
+            <p>状态：{{item.book.state}} {{item.book.operator_name}}
+                {{item.book.operate_at|date_fmt("[year]/[month]/[day]")}}</p>
+            <span>入库时间：{{item.book.import_at|date_fmt("[year]/[month]/[day]")}}</span>
         </div>
     </div>
 </div>
