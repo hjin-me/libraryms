@@ -14,11 +14,11 @@
         <th scope="col">书名</th>
         <th scope="col">作者</th>
         <th scope="col">状态</th>
-        <th scope="col">操作人</th>
+<!--        <th scope="col">操作人</th>-->
         <th scope="col">上次变更</th>
         <th scope="col">ISBN</th>
         <th scope="col">出版商</th>
-        <th scope="col">入库时间</th>
+<!--        <th scope="col">入库时间</th>-->
         <th scope="col">操作</th>
     </tr>
     </thead>
@@ -29,11 +29,11 @@
         <td><a href="/book/{{item.book.id}}"><span class="ellipsis">{{item.book.title}}</span></a></td>
         <td>{{item.book.authors|join(", ")}}</td>
         <td>{{item.book.state}}</td>
-        <td>{{item.book.operator_name}}</td>
+<!--        <td>{{item.book.operator_name}}</td>-->
         <td>{{item.book.operate_at|date_fmt("[year]/[month]/[day]")}}</td>
         <td>{{item.book.isbn}}</td>
         <td>{{item.book.publisher}}</td>
-        <td>{{item.book.import_at|date_fmt("[year]/[month]/[day]")}}</td>
+<!--        <td>{{item.book.import_at|date_fmt("[year]/[month]/[day]")}}</td>-->
         <td>
             {% for act in item.actions %}
             <button type="button" class="btn {{act.btn_type}} btn-sm"

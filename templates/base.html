@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-hans">
+<html lang="zh-hans" style="font-size: 14px">
 <head>
     <meta charset="utf-8"/>
     <title>{% block title %}图书管理系统 - 安天移动安全{% endblock %}</title>
@@ -16,7 +16,7 @@
 </head>
 
 <body>
-<div class="container">
+<div class="container-fluid">
     <header
         class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 mb-4 border-bottom">
         <a href="/" class="d-flex align-items-center col-md-3 mb-2 mb-md-0 text-dark text-decoration-none">
@@ -40,7 +40,7 @@
         </div>
     </header>
 </div>
-<div class="container">
+<div class="container-fluid">
     <div class="row">
         <div class="col-12">
             {% block content %}{% endblock %}
