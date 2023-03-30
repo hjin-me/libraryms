@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+
+
+    <div class="row">
+        <div class="col-3">
+            <img src="{{item.book.thumbnail}}" rel="noreferrer" referrerpolicy="no-referrer" class="img-thumbnail"
+                 alt="没找到缩略图">
+        </div>
+        <div class="col-9">
+            <h3>{{item.book.title}}</h3>
+            <p>作者：{{item.book.authors|join(", ")}}</p>
+            <p>ISBN: {{item.book.isbn}}</p>
+            <p>出版商：{{item.book.publisher}}</p>
+
+            <p>
+                {% for act in item.actions %}
+                <button type="button" class="btn {{act.btn_type}} btn-sm"
+                        hx-{{act.method}}="{{act.path}}"
+                >{{act.text}}
+                </button>
+                {% endfor %}
+            </p>
+            <p>状态：{{item.book.state}} {{item.book.operator_name}}
+                {{item.book.operate_at|date_fmt("[year]/[month]/[day]")}}</p>
+            <span>入库时间：{{item.book.import_at|date_fmt("[year]/[month]/[day]")}}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

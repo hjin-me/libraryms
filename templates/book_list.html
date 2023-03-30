@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid">
+
+    {% match current_user %}
+    {% when Some with (val) %}
+    <form class="row g-3" hx-post="/book/fast-import" hx-target="#books-table">
+        <div class="col-auto">
+            <label for="isbn" class="visually-hidden">ISBN</label>
+            <input type="text" placeholder="ISBN编号" class="form-control" id="isbn" name="isbn" value="">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary mb-3">入库</button>
+        </div>
+    </form>
+    {% when None %}
+    {% endmatch %}
+
+    <div class="row">
+        <div class="col-12">
+            {% include "books_table.html" %}
+        </div>
+    </div>
+</div>
+{% endblock %}

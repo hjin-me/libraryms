@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-hans" style="font-size: 14px">
+<head>
+    <meta charset="utf-8"/>
+    <title>{% block title %}图书管理系统 - 安天移动安全{% endblock %}</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="renderer" content="webkit"/>
+    <meta name="force-rendering" content="webkit"/>
+    <script src="https://unpkg.com/htmx.org@1.8.4"
+            integrity="sha384-wg5Y/JwF7VxGk4zLsJEcAojRtlVp1FKKdGy1qN+OMtdq72WRvX/EdRdqg/LOhYeV"
+            crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap@5.2.3/dist/css/bootstrap.min.css"
+          integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+<div class="container-fluid">
+    <header
+        class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 mb-4 border-bottom">
+        <a href="/" class="d-flex align-items-center col-md-3 mb-2 mb-md-0 text-dark text-decoration-none">
+            <svg class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap">
+                <use xlink:href="#bootstrap"></use>
+            </svg>
+        </a>
+
+        <ul class="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
+            <li><a href="/books" class="nav-link px-2 link-secondary">图书管理</a></li>
+        </ul>
+
+        <div class="col-md-3 text-end">
+            {% match current_user %}
+            {% when Some with (val) %}
+            <span title="{{val.uid}}">{{ val.display_name }}</span>
+            <a href="/logout" class="btn btn-primary">注销</a>
+            {% when None %}
+            <a href="/authentication" class="btn btn-outline-primary me-2">登陆</a>
+            {% endmatch %}
+        </div>
+    </header>
+</div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+</body>
+<script>
+    htmx.on("htmx:responseError", function (evt) {
+        alert("出错了\n" + evt?.detail?.xhr?.responseText)
+        console.error(evt)
+    });
+</script>
+</html>
