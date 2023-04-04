@@ -1,3 +1,4 @@
+use crate::entity::Book;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
@@ -209,4 +210,65 @@ pub fn BookStorage(cx: Scope) -> impl IntoView {
         </ActionForm>
 
     }
+}
+#[allow(non_snake_case)]
+#[component]
+pub fn BookList(cx: Scope) -> impl IntoView {
+    let posts = create_resource(
+        cx,
+        || (),
+        |_| async { crate::api::books::book_list(0, 10).await },
+    );
+    view! {
+            cx,
+            <div class="row">
+            <div class="col-12">
+                <table class="table table-sm" id="books-table">
+        <thead>
+        <tr>
+            <th scope="col">"#"</th>
+            <th scope="col">"书名"</th>
+            <th scope="col">"作者"</th>
+            <th scope="col">"状态"</th>
+            <th scope="col">"上次变更"</th>
+            <th scope="col">"ISBN"</th>
+            <th scope="col">"出版商"</th>
+            <th scope="col">"操作"</th>
+        </tr>
+        </thead>
+        <tbody>
+        <Suspense fallback=move || view! { cx, <p>"Loading..."</p> }>
+            {move || match posts.read(cx) {
+                None => None,
+                Some(Err(_)) => None,
+                Some(Ok(books)) => {
+                    Some(view! { cx,
+                        <For
+                        each=move || books.clone()
+                        key=|b| b.id
+                        view=move |cx, b: Book| {
+                            view! { cx,
+        <tr>
+        <th scope="row">{b.id}</th>
+        <td><span class="ellipsis">{b.title}</span></td>
+        <td>{b.authors.join(", ")}</td>
+        <td>{b.state.to_string()}</td>
+
+        <td>{b.operate_at.to_string()}</td>
+        <td>{b.isbn}</td>
+        <td>{b.publisher}</td>
+                </tr>
+                            }
+                        }
+                        />
+                    })
+                }
+            }}
+        </Suspense>
+        </tbody>
+    </table>
+            </div>
+        </div>
+
+        }
 }

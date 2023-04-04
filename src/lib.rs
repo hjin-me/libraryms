@@ -4,6 +4,7 @@ pub mod api;
 #[cfg(feature = "ssr")]
 pub mod backend;
 pub mod components;
+pub mod entity;
 pub mod error_template;
 pub mod errors;
 #[cfg(feature = "ssr")]
