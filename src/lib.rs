@@ -1,10 +1,11 @@
 use cfg_if::cfg_if;
 use leptos::*;
+pub mod backend;
 pub mod components;
 pub mod error_template;
 pub mod errors;
+#[cfg(feature = "ssr")]
 pub mod fallback;
-pub mod backend;
 
 // Needs to be in lib.rs AFAIK because wasm-bindgen needs us to be compiling a lib. I may be wrong.
 cfg_if! {

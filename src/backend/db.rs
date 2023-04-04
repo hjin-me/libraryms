@@ -24,14 +24,14 @@ pub async fn get_client() -> Result<Arc<PgPool>> {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[tokio::test]
-    async fn es() {
-        init("http://127.0.0.1:9200").await.unwrap();
-        let client = get_client().await.unwrap();
-        let rand_index = format!("test_{}", time::OffsetDateTime::now_utc().unix_timestamp());
-    }
-}
+// #[cfg(test)]
+// mod test {
+//     use super::*;
+//
+//     #[tokio::test]
+//     async fn es() {
+//         init("http://127.0.0.1:9200").await.unwrap();
+//         let client = get_client().await.unwrap();
+//         let rand_index = format!("test_{}", time::OffsetDateTime::now_utc().unix_timestamp());
+//     }
+// }

@@ -1,4 +1,6 @@
 use leptos::*;
+use leptos_meta::*;
+use leptos_router::*;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum BookState {
@@ -188,4 +190,25 @@ pub fn BookDetail(cx: Scope, #[prop()] book: BookUI) -> impl IntoView {
         </div>
     </div>
         }
+}
+
+
+
+#[allow(non_snake_case)]
+#[component]
+pub fn BookStorage(cx: Scope) -> impl IntoView {
+    let fast_storage_book_act = create_server_action::<crate::backend::books::FastStorageBook>(cx);
+    view! {
+        cx,
+        <ActionForm class="row g-3" action=fast_storage_book_act>
+             <div class="col-auto">
+                 <label for="isbn" class="visually-hidden">"ISBN"</label>
+                 <input type="text" placeholder="ISBN编号" class="form-control" id="isbn" name="isbn" value="" />
+             </div>
+             <div class="col-auto">
+                 <button type="submit" class="btn btn-primary mb-3">"入库"</button>
+             </div>
+        </ActionForm>
+
+    }
 }

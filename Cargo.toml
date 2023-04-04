@@ -36,13 +36,13 @@ clap = { version = "4.1.6", features = ["derive", "error-context", "help", "std"
 tracing = { version = "0.1.37" }
 tracing-subscriber = { version = "0.3.16" }
 lazy_static = "1.4.0"
-sqlx = { version = "0.6.3", features = ["time", "postgres", "offline", "uuid", "runtime-tokio-native-tls", "json", "macros"] }
+sqlx = { version = "0.6.3", features = ["time", "postgres", "offline", "uuid", "runtime-tokio-native-tls", "json", "macros"], optional = true }
 
 [features]
 default = ["csr"]
 csr = ["leptos/csr", "leptos_meta/csr", "leptos_router/csr"]
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]
-ssr = ["dep:axum", "dep:tower", "dep:tower-http", "dep:tokio", "leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:leptos_axum", "dep:once_cell", "dep:toml"]
+ssr = ["dep:axum", "dep:tower", "dep:tower-http", "dep:tokio", "leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:leptos_axum", "dep:once_cell", "dep:toml", "dep:sqlx"]
 
 [package.metadata.cargo-all-features]
 denylist = ["axum", "tower", "tower-http", "tokio", "leptos_axum"]

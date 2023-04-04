@@ -66,9 +66,15 @@ pub fn Header(cx: Scope) -> impl IntoView {
 #[component]
 pub fn DefaultPage(cx: Scope) -> impl IntoView {
     view! {
-            cx,
-        <header class="container-fluid site-header" role="banner">
-      "图书馆首页"
-    </header>
-    }
+                cx,
+            <div class="container-fluid">
+
+        <BookStorage/>
+
+        <div class="row">
+            <div class="col-12">
+            </div>
+        </div>
+    </div>
+        }
 }
