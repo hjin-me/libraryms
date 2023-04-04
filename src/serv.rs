@@ -7,6 +7,7 @@ use clap::Parser;
 use leptos::*;
 
 use leptos_axum::{generate_route_list, LeptosRoutes};
+use libraryms::backend::conf;
 use libraryms::components::home::*;
 use libraryms::fallback::file_and_error_handler;
 use std::fs;
@@ -40,7 +41,7 @@ pub async fn serv() {
     // get pwd
     let pwd = std::env::current_dir().unwrap();
     info!("Starting up {}, {:?}", &args.config, pwd);
-    let _contents =
+    let contents =
         fs::read_to_string(&args.config).expect("Should have been able to read the file");
 
     // Setting this to None means we'll be using cargo-leptos and its env vars
@@ -48,7 +49,13 @@ pub async fn serv() {
     let leptos_options = conf.leptos_options.clone();
     let addr = leptos_options.site_addr;
     let routes = generate_route_list(|cx| view! { cx, <BlogApp/> }).await;
-    libraryms::backend::books::register_server_functions();
+
+    let conf: conf::Config =
+        toml::from_str(&contents).expect("Should have been able to parse the file");
+    libraryms::backend::books::init(&conf.pg_dsn, &conf.isbn_api_key)
+        .await
+        .unwrap();
+    libraryms::api::register_server_functions();
 
     // build our application with a route
     let app = Router::new()

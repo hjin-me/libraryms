@@ -192,12 +192,10 @@ pub fn BookDetail(cx: Scope, #[prop()] book: BookUI) -> impl IntoView {
         }
 }
 
-
-
 #[allow(non_snake_case)]
 #[component]
 pub fn BookStorage(cx: Scope) -> impl IntoView {
-    let fast_storage_book_act = create_server_action::<crate::backend::books::FastStorageBook>(cx);
+    let fast_storage_book_act = create_server_action::<crate::api::books::FastStorageBook>(cx);
     view! {
         cx,
         <ActionForm class="row g-3" action=fast_storage_book_act>
