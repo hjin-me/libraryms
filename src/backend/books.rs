@@ -26,6 +26,7 @@ pub async fn get_bms() -> Result<Arc<BookMS>> {
 }
 
 use serde::{Deserialize, Serialize};
+use sqlx::Row;
 use std::fmt;
 use tracing::trace;
 
@@ -160,52 +161,49 @@ impl BookMS {
     //         Ok(book)
     //     }
 
-    //     pub async fn list(
-    //         &self,
-    //         limit: &i64,
-    //         offset: &i64,
-    //     ) -> Result<Vec<Book>, Box<dyn std::error::Error>> {
-    //         let conn = self.pg.get().await?;
-    //         let book_rows = conn
-    //             .query(
-    //                 "SELECT b.id,
-    //        b.isbn,
-    //        b.title,
-    //        b.authors,
-    //        b.publisher,
-    //        b.created_at,
-    //        b.state,
-    //        cl.operator,
-    //        a.display_name,
-    //        cl.operate_at,
-    //        b.thumbnail
-    // FROM books b
-    //          LEFT JOIN change_logs cl on b.log_id = cl.id
-    //          LEFT JOIN accounts a on a.id = cl.operator
-    // WHERE b.deleted_at is null
-    // ORDER BY b.created_at desc
-    // LIMIT $1 OFFSET $2 ",
-    //                 &[&limit, &offset],
-    //             )
-    //             .await?;
-    //         let books = book_rows
-    //             .iter()
-    //             .map(|row| Book {
-    //                 id: row.get(0),
-    //                 isbn: row.get(1),
-    //                 title: row.get(2),
-    //                 authors: row.get(3),
-    //                 publisher: row.get(4),
-    //                 import_at: row.get(5),
-    //                 state: BookState::from_str(row.get::<_, &str>(6)),
-    //                 operator: row.get(7),
-    //                 operator_name: row.get(8),
-    //                 operate_at: row.get(9),
-    //                 thumbnail: row.get(10),
-    //             })
-    //             .collect();
-    //         Ok(books)
-    //     }
+    pub async fn list(&self, limit: &i64, offset: &i64) -> Result<Vec<Book>> {
+        let book_rows = sqlx::query(
+            "SELECT b.id,
+       b.isbn,
+       b.title,
+       b.authors,
+       b.publisher,
+       b.created_at,
+       b.state,
+       cl.operator,
+       a.display_name,
+       cl.operate_at,
+       b.thumbnail
+FROM books b
+         LEFT JOIN change_logs cl on b.log_id = cl.id
+         LEFT JOIN accounts a on a.id = cl.operator
+WHERE b.deleted_at is null
+ORDER BY b.created_at desc
+LIMIT $1 OFFSET $2 ",
+        )
+        .bind(&limit)
+        .bind(&offset)
+        .fetch_all(&self.pg)
+        .await?;
+
+        let books = book_rows
+            .iter()
+            .map(|row| Book {
+                id: row.get(0),
+                isbn: row.get(1),
+                title: row.get(2),
+                authors: row.get(3),
+                publisher: row.get(4),
+                import_at: row.get(5),
+                state: BookState::from_str(row.get(6)),
+                operator: row.get(7),
+                operator_name: row.get(8),
+                operate_at: row.get(9),
+                thumbnail: row.get(10),
+            })
+            .collect();
+        Ok(books)
+    }
     // pub async fn delete(&self, book_id: &i64, who: &str) -> Result<(), Box<dyn std::error::Error>> {
     //     let mut client = self.pg.get().await?;
     //     let tc = client.transaction().await?;
@@ -483,6 +481,13 @@ mod test {
     use super::*;
     use crate::backend::conf::get_conf;
 
+    async fn new_bms() -> Result<BookMS> {
+        let conf = get_conf("./config.toml");
+        let pool = PgPool::connect(&conf.pg_dsn).await?;
+        let bms = BookMS::new(&pool, &conf.isbn_api_key);
+        Ok(bms)
+    }
+
     #[tokio::test]
     async fn isbn() {
         let conf = get_conf("./config.toml");
@@ -495,24 +500,15 @@ mod test {
     }
     #[tokio::test]
     async fn storage() {
-        let conf = get_conf("./config.toml");
-        crate::backend::db::init(&conf.pg_dsn).await.unwrap();
-        let pool = crate::backend::db::get_client().await.unwrap();
-        BookMS::new(&pool, &conf.isbn_api_key)
-            .storage("9787121390746", "songsong")
-            .await
-            .unwrap();
+        let bms = new_bms().await.unwrap();
+        bms.storage("9787121390746", "songsong").await.unwrap();
     }
-    // #[tokio::test]
-    // async fn list() {
-    //     let conf = get_conf("./config.toml");
-    //     let pool = get_pool(&conf.pg_dsn).await.unwrap();
-    //     let books = BookMS::new(&pool, &conf.isbn_api_key)
-    //         .list(&10, &0)
-    //         .await
-    //         .unwrap();
-    //     println!("{:?}", books);
-    // }
+    #[tokio::test]
+    async fn list() {
+        let bms = new_bms().await.unwrap();
+        let books = bms.list(&10, &0).await.unwrap();
+        dbg!(books);
+    }
     #[tokio::test]
     async fn decode() {
         let r = "{\"ret\":0,\"msg\":\"请求成功\",\"data\":\

@@ -10,7 +10,7 @@ pub async fn fast_storage_book(isbn: String) -> Result<(), ServerFnError> {
     let bms = crate::backend::books::get_bms()
         .await
         .map_err(|e| ServerError(e.to_string()))?;
-    bms.storage(isbn.as_str(), "some one")
+    bms.storage(isbn.as_str(), "songsong")
         .await
         .map_err(|e| ServerError(e.to_string()))?;
     Ok(())
