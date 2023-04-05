@@ -19,7 +19,7 @@ pub fn BlogApp(cx: Scope) -> impl IntoView {
           // applies the `formatter` function to the `text` value
           formatter=formatter
         />
-        <Stylesheet href="https://unpkg.com/bootstrap@5.2.3/dist/css/bootstrap.min.css"/>
+        <Stylesheet href="/pkg/hj.css"/>
         <Router>
             <Header />
     <div class="container-fluid">
