@@ -1,105 +1,10 @@
+use crate::api::books::BookUI;
 use crate::entity::Book;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 use serde::{Deserialize, Serialize};
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub enum BookState {
-    Available,
-    Borrowed,
-    Returned,
-    Lost,
-    Deleted,
-    Unknown,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct BookAct {
-    pub btn_type: String,
-    pub method: String,
-    pub path: String,
-    pub text: String,
-}
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct BookUI {
-    pub id: i64,
-    pub isbn: String,
-    pub title: String,
-    pub authors: Vec<String>,
-    pub publisher: String,
-    // pub import_at: time::OffsetDateTime,
-    // pub state: BookState,
-    pub operator: String,
-    pub operator_name: String,
-    // pub operate_at: time::OffsetDateTime,
-    pub thumbnail: String,
-    pub actions: Vec<BookAct>,
-}
-
-// fn book_with_actions(book: &Book, current_user: &Option<Entity>) -> Vec<BookAct> {
-//     let act_borrow = BookAction {
-//         btn_type: "btn-primary".to_string(),
-//         method: "post".to_string(),
-//         path: format!("/book/borrow/{}", &book.id),
-//         text: "借阅".to_string(),
-//     };
-//     let act_return = BookAction {
-//         btn_type: "btn-success".to_string(),
-//         method: "post".to_string(),
-//         path: format!("/book/return/{}", &book.id),
-//         text: "归还".to_string(),
-//     };
-//     let act_confirm = BookAction {
-//         btn_type: "btn-info".to_string(),
-//         method: "post".to_string(),
-//         path: format!("/book/confirm/{}", &book.id),
-//         text: "确认已归还".to_string(),
-//     };
-//     let act_lost = BookAction {
-//         btn_type: "btn-dark".to_string(),
-//         method: "post".to_string(),
-//         path: format!("/book/lost/{}", &book.id),
-//         text: "标记遗失".to_string(),
-//     };
-//     let act_reset = BookAction {
-//         btn_type: "btn-secondary".to_string(),
-//         method: "put".to_string(),
-//         path: format!("/book/{}", &book.id),
-//         text: "重置状态".to_string(),
-//     };
-//     let act_delete = BookAction {
-//         btn_type: "btn-danger".to_string(),
-//         method: "delete".to_string(),
-//         path: format!("/book/{}", &book.id),
-//         text: "删除".to_string(),
-//     };
-//     let current_uid = current_user
-//         .as_ref()
-//         .map(|u| u.uid.clone())
-//         .unwrap_or("".to_string());
-//     let role = current_user
-//         .as_ref()
-//         .map(|u| u.role.clone())
-//         .unwrap_or(Role::User);
-//     let mut actions = vec![];
-//     if book.state == BookState::Available && current_uid != "" {
-//         actions.push(act_borrow);
-//     }
-//     if book.state == BookState::Borrowed && current_uid == book.operator {
-//         actions.push(act_return);
-//     }
-//     if book.state == BookState::Returned && role == Role::Admin {
-//         actions.push(act_confirm);
-//     }
-//     if book.state == BookState::Lost && role == Role::Admin {
-//         actions.push(act_reset);
-//     }
-//     if role == Role::Admin {
-//         actions.push(act_lost);
-//         actions.push(act_delete);
-//     }
-//     actions
-// }
+use time::OffsetDateTime;
 
 #[allow(non_snake_case)]
 #[component]
@@ -134,7 +39,7 @@ pub fn BookDetailPage(cx: Scope) -> impl IntoView {
 
 #[allow(non_snake_case)]
 #[component]
-pub fn BookDetail(cx: Scope, #[prop()] book: Book) -> impl IntoView {
+pub fn BookDetail(cx: Scope, #[prop()] book: BookUI) -> impl IntoView {
     view! {
     cx,
     <section>
@@ -174,15 +79,14 @@ pub fn BookStorage(cx: Scope) -> impl IntoView {
     view! {
         cx,
         <ActionForm class="row g-3" action=fast_storage_book_act>
-             <div class="col-auto">
-                 <label for="isbn" class="visually-hidden">"ISBN"</label>
-                 <input type="text" placeholder="ISBN编号" class="form-control" id="isbn" name="isbn" value="" />
-             </div>
-             <div class="col-auto">
-                 <button type="submit" class="btn btn-primary mb-3">"入库"</button>
-             </div>
-        </ActionForm>
+            <label for="isbn" class="block overflow-hidden rounded-md border border-gray-200 px-3 py-2 shadow-sm focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600">
+                <span class="text-xs font-medium text-gray-700"> "ISBN" </span>
+                <input type="text" id="isbn" name="isbn" class="mt-1 w-full border-none p-0 focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"/>
+            </label>
 
+            <button type="submit" class="inline-block shrink-0 rounded-md border border-blue-600 bg-blue-600 px-12 py-3 text-sm font-medium text-white transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500">"入库"</button>
+
+        </ActionForm>
     }
 }
 
@@ -203,7 +107,7 @@ pub fn BookGallery(cx: Scope) -> impl IntoView {
             <For
             each=move || books.clone()
             key=|b| b.id
-            view=move |cx, b: Book| {
+            view=move |cx, b: BookUI| {
                 view! {
                     cx,
               <A href=format!("/book/{}", b.id) class="group">
@@ -285,7 +189,7 @@ pub fn BookList(cx: Scope) -> impl IntoView {
                             <For
                             each=move || books.clone()
                             key=|b| b.id
-                            view=move |cx, b: Book| {
+                            view=move |cx, b: BookUI| {
                                 view! { cx,
             <tr>
             <th class="whitespace-nowrap px-4 py-2 font-medium text-gray-900">{b.id}</th>
@@ -315,7 +219,28 @@ pub fn BookList(cx: Scope) -> impl IntoView {
         </tbody>
       </table>
     </div>
+    }
+}
 
-
-            }
+pub fn from_now(date: OffsetDateTime) -> String {
+    use std::ops::Sub;
+    let d = date.sub(OffsetDateTime::now_utc());
+    let append: &str = if d.is_positive() { "后" } else { "前" };
+    if d.whole_seconds().abs() < 60 {
+        return "刚才".to_string();
+    }
+    if d.whole_minutes().abs() < 60 {
+        return format!("{} 分钟{}", d.whole_minutes().abs(), append);
+    }
+    if d.whole_hours().abs() < 24 {
+        return format!("{} 小时{}", d.whole_hours().abs(), append);
+    }
+    if d.whole_days().abs() < 30 {
+        return format!("{} 天{}", d.whole_days().abs(), append);
+    }
+    let out_format = time::format_description::parse(
+        "[year]-[month]-[day] [hour padding:none]:[minute]:[second]",
+    )
+    .unwrap();
+    date.format(&out_format).unwrap()
 }

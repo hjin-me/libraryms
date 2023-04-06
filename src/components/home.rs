@@ -1,3 +1,4 @@
+use crate::components::assets::*;
 use crate::components::book::*;
 use leptos::*;
 use leptos_meta::*;
@@ -10,67 +11,149 @@ pub fn BlogApp(cx: Scope) -> impl IntoView {
     let formatter = |text| format!("{text} — 图书管理系统 - 安天移动安全");
 
     view! {
-                cx,
-            <Html lang="zh-hans"/>
-        <Meta charset="utf-8"/>
-            <Title
-          // reactively sets document.title when `name` changes
-          text="首页"
-          // applies the `formatter` function to the `text` value
-          formatter=formatter
-        />
-        <Stylesheet href="/pkg/hj.css"/>
-        <Router>
-            <Header />
-            <main>
-                <Routes>
-                       <Route path="" view=|cx| view! {
-                        cx,
-                        <DefaultPage/>
-                } ssr=SsrMode::InOrder/> //Route
-                        <Route path="book/:id" view=|cx| view! {
-                        cx,
-                        <BookDetailPage/>
-                } ssr=SsrMode::InOrder/> //Route
-                </Routes>
-            </main>
-        </Router>
+      cx,
+      <Html lang="zh-hans"/>
+      <Meta charset="utf-8"/>
+          <Title
+        // reactively sets document.title when `name` changes
+        text="首页"
+        // applies the `formatter` function to the `text` value
+        formatter=formatter
+      />
+      <Stylesheet href="/pkg/hj.css"/>
+      <Router>
+        <Header />
+        <main>
+        <Routes>
+        <Route path="" view=|cx| view! {cx,<DefaultPage/>} ssr=SsrMode::InOrder/>
+        <Route path="book/:id" view=|cx| view! {cx,<BookDetailPage/>} ssr=SsrMode::InOrder/>
+        <Route path="assets-mgr" view=|cx| view! {cx,<AssetsPage/>} ssr=SsrMode::InOrder/>
+        </Routes>
+        </main>
+      </Router>
     }
 }
 #[allow(non_snake_case)]
 #[component]
 pub fn Header(cx: Scope) -> impl IntoView {
     view! {
-                    cx,
-    <header class="bg-white">
-      <nav class="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
-        <div class="flex lg:flex-1">
-          <a href="/" class="-m-1.5 p-1.5">
-            <span class="sr-only">"Your Company"</span>
-            <img class="h-8 w-auto" src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600" alt=""/>
-          </a>
-        </div>
-        <div class="flex lg:hidden">
-          <button type="button" class="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700">
-            <span class="sr-only">"Open main menu"</span>
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-            </svg>
-          </button>
-        </div>
-        <div class="hidden lg:flex lg:gap-x-12">
-            <A href="/" class="text-sm font-semibold leading-6 text-gray-900">"图书馆"</A>
-            <A href="/my" class="text-sm font-semibold leading-6 text-gray-900">"我的借阅"</A>
-            <A href="/assets-mgr" class="text-sm font-semibold leading-6 text-gray-900">"资产管理"</A>
-        </div>
+        cx,
+      <header aria-label="Site Header" class="shadow-sm">
+        <div class="mx-auto flex h-16 max-w-screen-xl items-center justify-between px-4">
+          <div class="flex w-0 flex-1 lg:hidden">
+            <button class="rounded-full bg-gray-100 p-2 text-gray-600" type="button">
+             <span class="sr-only">"Account"</span>
+              <svg
+            class="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewbox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+                >
+            <path
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+            ></path>
+              </svg>
+            </button>
+          </div>
 
-        <div class="hidden lg:flex lg:flex-1 lg:justify-end">
-          <a href="#" class="text-sm font-semibold leading-6 text-gray-900">"Log in "<span aria-hidden="true">"→"</span></a>
-        </div>
+        <div class="flex items-center gap-4">
+        <a href="#">
+          <span class="sr-only">"Logo"</span>
+          <span class="h-10 w-20 rounded-lg bg-gray-200"></span>
+        </a>
+
+        <form class="mb-0 hidden lg:flex">
+          <div class="relative">
+            <input
+              class="h-10 rounded-lg border-gray-200 pr-10 text-sm placeholder-gray-300 focus:z-10"
+              placeholder="Search..."
+              type="text"
+            />
+
+            <button
+              type="submit"
+              class="absolute inset-y-0 right-0 rounded-r-lg p-2 text-gray-600"
+            >
+              <span class="sr-only">"Submit Search"</span>
+              <svg
+                class="h-5 w-5"
+                fill="currentColor"
+                viewbox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  clip-rule="evenodd"
+                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                  fill-rule="evenodd"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </form>
+      </div>
+
+
+        <div class="flex w-0 flex-1 justify-end lg:hidden">
+        <button class="rounded-full bg-gray-100 p-2 text-gray-500" type="button">
+          <span class="sr-only">"Menu"</span>
+          <svg
+            class="h-5 w-5"
+            fill="currentColor"
+            viewbox="0 0 20 20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              clip-rule="evenodd"
+              d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+              fill-rule="evenodd"
+            ></path>
+          </svg>
+        </button>
+      </div>
+
+        <nav
+        aria-label="Site Nav"
+        class="hidden items-center justify-center gap-8 text-sm font-medium lg:flex lg:w-0 lg:flex-1"
+      >
+        <A class="text-gray-900" href="/">"图书馆"</A>
+        <A class="text-gray-900" href="/my">"我的借阅"</A>
+        <A class="text-gray-900" href="/assets-mgr">"资产管理"</A>
       </nav>
-    </header>
-            }
+
+        <div class="hidden items-center gap-4 lg:flex">
+        <a
+          href="#"
+          class="rounded-lg bg-gray-100 px-5 py-2 text-sm font-medium text-gray-600"
+        >
+          "Log in"
+        </a>
+
+        <a
+          href="#"
+          class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white"
+        >
+          "Sign up"
+        </a>
+      </div>
+
+        </div>
+        <div class="border-t border-gray-100 lg:hidden">
+      <nav
+        class="flex items-center justify-center overflow-x-auto p-4 text-sm font-medium"
+      >
+        <A class="flex-shrink-0 pl-4 text-gray-900" href="/">"图书馆"</A>
+        <A class="flex-shrink-0 pl-4 text-gray-900" href="/my">"我的借阅"</A>
+        <A class="flex-shrink-0 pl-4 text-gray-900" href="/assets-mgr">"资产管理"</A>
+      </nav>
+    </div>
+        </header>
+              }
 }
+
 #[allow(non_snake_case)]
 #[component]
 pub fn DefaultPage(cx: Scope) -> impl IntoView {
