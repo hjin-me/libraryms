@@ -1,5 +1,4 @@
-use crate::api::books::BookUI;
-use crate::entity::Book;
+use crate::api::books::{BookAction, BookUI};
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
@@ -40,6 +39,55 @@ pub fn BookDetailPage(cx: Scope) -> impl IntoView {
 #[allow(non_snake_case)]
 #[component]
 pub fn BookDetail(cx: Scope, #[prop()] book: BookUI) -> impl IntoView {
+    let act_btn :Vec<_>= book.actions.iter().map(move |a| {
+        match a {
+            BookAction::Borrow => view! {
+                    cx,
+                    <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
+                    "借阅"
+                    </button>
+            },
+            BookAction::Lost => view! {
+                    cx,
+                    <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
+                    "标记遗失"
+                    </button>
+            },
+            BookAction::Return => view! {
+                    cx,
+                    <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
+                    "归还"
+                    </button>
+            },
+            BookAction::Reset => view! {
+                    cx,
+                    <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
+                    "重置状态"
+                    </button>
+            },
+            BookAction::Delete=> view! {
+                    cx,
+                    <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
+                    "删除"
+                    </button>
+            },
+            BookAction::Lost => view! {
+                    cx,
+                    <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
+                    "标记遗失"
+                    </button>
+            },
+            _ => {
+
+                view! {
+                    cx,
+                    <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
+                    "其他"
+                    </button>
+                }
+            }
+        }
+    }).collect();
     view! {
     cx,
     <section>
@@ -58,11 +106,7 @@ pub fn BookDetail(cx: Scope, #[prop()] book: BookUI) -> impl IntoView {
                             <p class="text-sm">{book.authors.join(", ")}</p>
                             <p class="text-sm">{book.isbn}</p>
                             <p class="text-sm">{book.publisher}</p>
-                            <button type="submit"
-                                class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500"
-                            >
-                            "借阅"
-                            </button>
+                            {act_btn}
                         </div>
                     </div>
                 </div>
