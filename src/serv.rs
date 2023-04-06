@@ -1,6 +1,6 @@
 use axum::{
     extract::Extension,
-    routing::{any, get, post},
+    routing::{get, post},
     Router,
 };
 use clap::Parser;

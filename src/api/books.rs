@@ -8,6 +8,7 @@ use tracing::trace;
 pub fn register_server_functions() {
     let _ = FastStorageBook::register();
     let _ = BookList::register();
+    let _ = BookDetail::register();
 }
 #[server(FastStorageBook, "/api")]
 pub async fn fast_storage_book(isbn: String) -> Result<(), ServerFnError> {
@@ -22,7 +23,6 @@ pub async fn fast_storage_book(isbn: String) -> Result<(), ServerFnError> {
 
 #[server(BookList, "/api")]
 pub async fn book_list(offset: i64, limit: i64) -> Result<Vec<Book>, ServerFnError> {
-    trace!("offset: , limit: ");
     let bms = crate::backend::books::get_bms()
         .await
         .map_err(|e| ServerError(e.to_string()))?;
@@ -31,4 +31,17 @@ pub async fn book_list(offset: i64, limit: i64) -> Result<Vec<Book>, ServerFnErr
         .await
         .map_err(|e| ServerError(e.to_string()))?;
     Ok(books)
+}
+
+#[server(BookDetail, "/api")]
+pub async fn book_detail(id: i64) -> Result<Book, ServerFnError> {
+    trace!("id: {}", id);
+    let bms = crate::backend::books::get_bms()
+        .await
+        .map_err(|e| ServerError(e.to_string()))?;
+    let book = bms
+        .get_one_by_id(&id)
+        .await
+        .map_err(|e| ServerError(e.to_string()))?;
+    Ok(book)
 }
