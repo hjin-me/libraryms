@@ -114,36 +114,6 @@ pub enum Role {
 
 impl BookUI {
     pub fn bind_role(&mut self, current_user: &Option<UserSession>) {
-        // let act_borrow = BookAction {
-        //     act: "borrow".to_string(),
-        //     // btn_type: "btn-primary".to_string(),
-        //     // text: "借阅".to_string(),
-        // };
-        // let act_return = BookAction {
-        //     act: "return".to_string(),
-        //     // btn_type: "btn-success".to_string(),
-        //     // text: "归还".to_string(),
-        // };
-        // let act_confirm = BookAction {
-        //     act: "confirm".to_string(),
-        //     // btn_type: "btn-info".to_string(),
-        //     // text: "确认已归还".to_string(),
-        // };
-        // let act_lost = BookAction {
-        //     act: "lost".to_string(),
-        //     // btn_type: "btn-dark".to_string(),
-        //     // text: "标记遗失".to_string(),
-        // };
-        // let act_reset = BookAction {
-        //     act: "reset".to_string(),
-        //     // btn_type: "btn-secondary".to_string(),
-        //     // text: "重置状态".to_string(),
-        // };
-        // let act_delete = BookAction {
-        //     act: "delete".to_string(),
-        //     // btn_type: "btn-danger".to_string(),
-        //     // text: "删除".to_string(),
-        // };
         let current_uid = current_user
             .as_ref()
             .map(|u| u.uid.clone())

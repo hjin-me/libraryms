@@ -52,6 +52,19 @@ pub async fn serv() {
 
     let conf: conf::Config =
         toml::from_str(&contents).expect("Should have been able to parse the file");
+
+    libraryms::backend::ldap::init(
+        &conf.ldap.url,
+        &conf.ldap.base,
+        &conf.ldap.attr,
+        if let (Some(bind_dn), Some(bind_pw)) = (conf.ldap.bind_dn, conf.ldap.bind_pw) {
+            Some((bind_dn, bind_pw))
+        } else {
+            None
+        },
+    )
+    .await
+    .unwrap();
     libraryms::backend::books::init(&conf.pg_dsn, &conf.isbn_api_key)
         .await
         .unwrap();
@@ -59,7 +72,7 @@ pub async fn serv() {
 
     // build our application with a route
     let app = Router::new()
-        .layer(CompressionLayer::new())
+        // .layer(CompressionLayer::new())
         .route("/liveness", get(|| async { "I'm alive!" }))
         .route("/readiness", get(|| async { "I'm ready!" }))
         .route("/api/*fn_name", post(leptos_axum::handle_server_fns))

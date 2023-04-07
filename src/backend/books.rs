@@ -430,10 +430,10 @@ async fn get_book_by_isbn(isbn: &str, api_key: &str) -> Result<ISBNData> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::backend::conf::get_conf;
+    use crate::backend::conf::parse_conf;
 
     async fn new_bms() -> Result<BookMS> {
-        let conf = get_conf("./config.toml");
+        let conf = parse_conf("./config.toml");
         let pool = PgPool::connect(&conf.pg_dsn).await?;
         let bms = BookMS::new(&pool, &conf.isbn_api_key);
         Ok(bms)
@@ -441,7 +441,7 @@ mod test {
 
     #[tokio::test]
     async fn isbn() {
-        let conf = get_conf("./config.toml");
+        let conf = parse_conf("./config.toml");
         let isbn = "9787121390746";
         let resp = get_book_by_isbn(&isbn, &conf.isbn_api_key).await.unwrap();
         println!("{:?}", resp);
