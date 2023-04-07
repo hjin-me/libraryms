@@ -8,6 +8,7 @@ use leptos::*;
 
 use leptos_axum::{generate_route_list, LeptosRoutes};
 use libraryms::backend::conf;
+use libraryms::backend::conf::{get_conf, parse_conf};
 use libraryms::components::home::*;
 use libraryms::fallback::file_and_error_handler;
 use std::fs;
@@ -41,8 +42,7 @@ pub async fn serv() {
     // get pwd
     let pwd = std::env::current_dir().unwrap();
     info!("Starting up {}, {:?}", &args.config, pwd);
-    let contents =
-        fs::read_to_string(&args.config).expect("Should have been able to read the file");
+    parse_conf(&args.config);
 
     // Setting this to None means we'll be using cargo-leptos and its env vars
     let conf = get_configuration(None).await.unwrap();
@@ -50,15 +50,14 @@ pub async fn serv() {
     let addr = leptos_options.site_addr;
     let routes = generate_route_list(|cx| view! { cx, <BlogApp/> }).await;
 
-    let conf: conf::Config =
-        toml::from_str(&contents).expect("Should have been able to parse the file");
+    let conf = get_conf();
 
     libraryms::backend::ldap::init(
         &conf.ldap.url,
         &conf.ldap.base,
         &conf.ldap.attr,
-        if let (Some(bind_dn), Some(bind_pw)) = (conf.ldap.bind_dn, conf.ldap.bind_pw) {
-            Some((bind_dn, bind_pw))
+        if let (Some(bind_dn), Some(bind_pw)) = (&conf.ldap.bind_dn, &conf.ldap.bind_pw) {
+            Some((bind_dn.clone(), bind_pw.clone()))
         } else {
             None
         },

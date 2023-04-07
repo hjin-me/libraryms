@@ -32,6 +32,7 @@ pub fn parse_conf(p: &str) -> Config {
     INSTANCE.set(Arc::new(conf.clone())).unwrap();
     conf
 }
+
 pub fn get_conf() -> Arc<Config> {
     INSTANCE.get().unwrap().clone()
 }

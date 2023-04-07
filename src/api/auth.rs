@@ -16,13 +16,7 @@ pub async fn login(cx: Scope, username: String, password: String) -> Result<(), 
         .await
         .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
     if r {
-        // leptos_axum::set_cookie(cx, "username", &username);
-        match use_context::<leptos_axum::ResponseOptions>(cx) {
-            Some(r) => {
-                r.insert_header("x-header".parse().unwrap(), "username=123".parse().unwrap())
-            }
-            None => {}
-        };
+        crate::backend::auth::set_account_info(cx, &username);
         leptos_axum::redirect(cx, "/assets-mgr");
         return Ok(());
     }

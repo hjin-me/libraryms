@@ -8,6 +8,7 @@ use jsonwebtoken::{decode, DecodingKey, EncodingKey, Validation};
 use leptos_reactive::use_context;
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Row};
+use std::string::ToString;
 use tracing::trace;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -20,7 +21,9 @@ struct Claims {
     sub: String,
 }
 
-async fn token_from_cookies(cx: leptos::Scope) -> Option<AccountInfo> {
+const COOKIE_NAME: &'static str = "x-token";
+
+async fn account_info_from_cookies(cx: leptos::Scope) -> Option<AccountInfo> {
     let rp = match use_context::<leptos_axum::RequestParts>(cx) {
         Some(rp) => rp,
         None => return None,
@@ -30,7 +33,7 @@ async fn token_from_cookies(cx: leptos::Scope) -> Option<AccountInfo> {
         None => return None,
     };
     let token = match Cookie::split_parse(h).find(|cookie| match cookie {
-        Ok(cookie) => cookie.name() == "x-token",
+        Ok(cookie) => cookie.name() == COOKIE_NAME,
         Err(_) => false,
     }) {
         Some(c) => match c {
@@ -59,15 +62,25 @@ async fn token_from_cookies(cx: leptos::Scope) -> Option<AccountInfo> {
         Err(_) => None,
     }
 }
+pub fn set_account_info(cx: leptos::Scope, sub: &str) {
+    let conf = get_conf();
+    let token = gen_access_token(&conf.session_secret.as_bytes(), sub);
+    let mut c = Cookie::new(COOKIE_NAME, token);
+    c.set_max_age(time::Duration::days(7));
+    match use_context::<leptos_axum::ResponseOptions>(cx) {
+        Some(r) => r.insert_header(http::header::SET_COOKIE, c.to_string().parse().unwrap()),
+        None => {}
+    };
+}
 
-pub fn gen_access_token(secret: &[u8], sub: &String) -> String {
+pub fn gen_access_token(secret: &[u8], sub: &str) -> String {
     // HS256
     let token = jsonwebtoken::encode(
         &jsonwebtoken::Header::default(),
         &Claims {
             exp: time::OffsetDateTime::now_utc().unix_timestamp() as usize + 24 * 3600,
             nbf: time::OffsetDateTime::now_utc().unix_timestamp() as usize - 300,
-            sub: sub.clone(),
+            sub: sub.to_string(),
         },
         &EncodingKey::from_secret(secret),
     )
