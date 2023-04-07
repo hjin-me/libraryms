@@ -26,10 +26,8 @@ pub async fn get_bms() -> Result<Arc<BookMS>> {
 }
 
 use crate::entity::{Book, BookState};
-use clap::Error;
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
-use std::fmt;
 use tracing::trace;
 
 #[derive(Debug, Serialize, Deserialize)]

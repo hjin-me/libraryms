@@ -1,4 +1,5 @@
 use crate::components::assets::*;
+use crate::components::auth::*;
 use crate::components::book::*;
 use leptos::*;
 use leptos_meta::*;
@@ -10,6 +11,7 @@ pub fn BlogApp(cx: Scope) -> impl IntoView {
     provide_meta_context(cx);
     let formatter = |text| format!("{text} — 图书管理系统 - 安天移动安全");
 
+    let login_action = create_server_action::<crate::api::auth::Login>(cx);
     view! {
       cx,
       <Html lang="zh-hans"/>
@@ -28,6 +30,7 @@ pub fn BlogApp(cx: Scope) -> impl IntoView {
         <Route path="" view=|cx| view! {cx,<DefaultPage/>} ssr=SsrMode::InOrder/>
         <Route path="book/:id" view=|cx| view! {cx,<BookDetailPage/>} ssr=SsrMode::InOrder/>
         <Route path="assets-mgr" view=|cx| view! {cx,<AssetsPage/>} ssr=SsrMode::InOrder/>
+        <Route path="login" view= move |cx| view! {cx,<LoginPage action=login_action/>} ssr=SsrMode::InOrder/>
         </Routes>
         </main>
       </Router>
@@ -125,19 +128,12 @@ pub fn Header(cx: Scope) -> impl IntoView {
       </nav>
 
         <div class="hidden items-center gap-4 lg:flex">
-        <a
-          href="#"
-          class="rounded-lg bg-gray-100 px-5 py-2 text-sm font-medium text-gray-600"
-        >
-          "Log in"
-        </a>
-
-        <a
-          href="#"
+        <A
+          href="/login"
           class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white"
         >
-          "Sign up"
-        </a>
+          "登录"
+        </A>
       </div>
 
         </div>

@@ -1,8 +1,6 @@
 use crate::api::books::{BookAction, BookUI};
 use leptos::*;
-use leptos_meta::*;
 use leptos_router::*;
-use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
 #[allow(non_snake_case)]
