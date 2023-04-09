@@ -3,6 +3,7 @@ use crate::components::auth::*;
 use crate::components::book::*;
 use leptos::*;
 use leptos_meta::*;
+use leptos_router::SsrMode::InOrder;
 use leptos_router::*;
 
 #[allow(non_snake_case)]
@@ -27,10 +28,10 @@ pub fn BlogApp(cx: Scope) -> impl IntoView {
         <Header />
         <main>
         <Routes>
-        <Route path="" view=|cx| view! {cx,<DefaultPage/>} ssr=SsrMode::InOrder/>
-        <Route path="book/:id" view=|cx| view! {cx,<BookDetailPage/>} ssr=SsrMode::InOrder/>
-        <Route path="assets-mgr" view=|cx| view! {cx,<AssetsPage/>} ssr=SsrMode::InOrder/>
-        <Route path="login" view= move |cx| view! {cx,<LoginPage action=login_action/>} ssr=SsrMode::InOrder/>
+        <Route path="" view=|cx| view! {cx,<DefaultPage/>} ssr=InOrder/>
+        <Route path="book/:id" view=|cx| view! {cx,<BookDetailPage/>} ssr=InOrder/>
+        <Route path="assets-mgr" view=|cx| view! {cx,<AssetsPage/>} ssr=InOrder/>
+        <Route path="login" view= move |cx| view! {cx,<LoginPage action=login_action/>} ssr=InOrder />
         </Routes>
         </main>
       </Router>
@@ -39,6 +40,28 @@ pub fn BlogApp(cx: Scope) -> impl IntoView {
 #[allow(non_snake_case)]
 #[component]
 pub fn Header(cx: Scope) -> impl IntoView {
+    // let account = create_resource(cx, || {}, move async |_| { get_account(cx).await });
+    let account = create_resource(cx, || (), move |_| crate::api::auth::get_account(cx));
+
+    let u = {
+        move || {
+            account.read(cx).map(|user| match user {
+            Err(e) => view! {cx,
+                            <span>{format!("Login error: {}", e.to_string())}</span>
+                        }.into_view(cx),
+            Ok(None) => view! {cx,
+                            <A
+                                href="/login" class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white">
+                                "登录"
+                            </A>
+                        }.into_view(cx),
+            Ok(Some(user)) => view! {cx,
+                            <span>{format!("欢迎爱学习的 {}", user.display_name)}</span>
+                        }.into_view(cx)
+        })
+        }
+    };
+
     view! {
         cx,
       <header aria-label="Site Header" class="shadow-sm">
@@ -128,12 +151,9 @@ pub fn Header(cx: Scope) -> impl IntoView {
       </nav>
 
         <div class="hidden items-center gap-4 lg:flex">
-        <A
-          href="/login"
-          class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white"
-        >
-          "登录"
-        </A>
+        <Suspense fallback= move || view! {cx, <span>"Loading"</span>}.into_any()>
+            {u}
+        </Suspense>
       </div>
 
         </div>
@@ -147,7 +167,7 @@ pub fn Header(cx: Scope) -> impl IntoView {
       </nav>
     </div>
         </header>
-              }
+    }
 }
 
 #[allow(non_snake_case)]

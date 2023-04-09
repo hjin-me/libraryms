@@ -222,7 +222,7 @@ pub fn BookList(cx: Scope) -> impl IntoView {
         </thead>
 
         <tbody class="divide-y divide-gray-200">
-             <Suspense fallback=move || view! { cx, <p>"Loading..."</p> }>
+          <Suspense fallback=move || view! { cx, <p>"Loading..."</p> }.into_any()>
                 {move || match posts.read(cx) {
                     None => None,
                     Some(Err(_)) => None,
@@ -251,7 +251,7 @@ pub fn BookList(cx: Scope) -> impl IntoView {
               </A>
             </td>
                     </tr>
-                                }
+                                }.into_any()
                             }
                             />
                         })

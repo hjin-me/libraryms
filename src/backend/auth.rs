@@ -23,7 +23,7 @@ struct Claims {
 
 const COOKIE_NAME: &'static str = "x-token";
 
-async fn account_info_from_cookies(cx: leptos::Scope) -> Option<AccountInfo> {
+pub async fn account_info_from_cookies(cx: leptos::Scope) -> Option<AccountInfo> {
     let rp = match use_context::<leptos_axum::RequestParts>(cx) {
         Some(rp) => rp,
         None => return None,
@@ -59,7 +59,7 @@ async fn account_info_from_cookies(cx: leptos::Scope) -> Option<AccountInfo> {
                 None
             }
         },
-        Err(_) => None,
+        Err(e) => None,
     }
 }
 pub fn set_account_info(cx: leptos::Scope, sub: &str) {
@@ -67,6 +67,7 @@ pub fn set_account_info(cx: leptos::Scope, sub: &str) {
     let token = gen_access_token(&conf.session_secret.as_bytes(), sub);
     let mut c = Cookie::new(COOKIE_NAME, token);
     c.set_max_age(time::Duration::days(7));
+    c.set_path("/");
     match use_context::<leptos_axum::ResponseOptions>(cx) {
         Some(r) => r.insert_header(http::header::SET_COOKIE, c.to_string().parse().unwrap()),
         None => {}
@@ -141,6 +142,7 @@ impl Role {
     }
 }
 
+#[derive(Debug)]
 pub struct AccountInfo {
     pub id: String,
     pub display_name: String,

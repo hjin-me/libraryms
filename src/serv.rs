@@ -51,6 +51,7 @@ pub async fn serv() {
     let routes = generate_route_list(|cx| view! { cx, <BlogApp/> }).await;
 
     let conf = get_conf();
+    libraryms::backend::db::init(&conf.pg_dsn).await.unwrap();
 
     libraryms::backend::ldap::init(
         &conf.ldap.url,
@@ -71,7 +72,6 @@ pub async fn serv() {
 
     // build our application with a route
     let app = Router::new()
-        // .layer(CompressionLayer::new())
         .route("/liveness", get(|| async { "I'm alive!" }))
         .route("/readiness", get(|| async { "I'm ready!" }))
         .route("/api/*fn_name", post(leptos_axum::handle_server_fns))
@@ -81,12 +81,12 @@ pub async fn serv() {
             |cx| view! { cx, <BlogApp/> },
         )
         .fallback(file_and_error_handler)
-        .layer(Extension(Arc::new(leptos_options)))
-        .layer(
-            ServiceBuilder::new()
-                .layer(TraceLayer::new_for_http())
-                .layer(CompressionLayer::new()),
-        );
+        .layer(Extension(Arc::new(leptos_options)));
+    // .layer(
+    //     ServiceBuilder::new()
+    //         .layer(TraceLayer::new_for_http())
+    //         .layer(CompressionLayer::new()),
+    // );
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`

@@ -458,7 +458,6 @@ mod test {
     async fn list() {
         let bms = new_bms().await.unwrap();
         let books = bms.list(&10, &0).await.unwrap();
-        dbg!(books);
     }
     #[tokio::test]
     async fn decode() {

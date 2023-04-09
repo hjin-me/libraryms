@@ -1,3 +1,4 @@
+use crate::api::auth::{Role, UserSession};
 use crate::entity::{Book, BookState};
 use leptos::ServerFnError::ServerError;
 use leptos::*;
@@ -99,17 +100,6 @@ impl From<&Book> for BookUI {
     fn from(value: &Book) -> Self {
         Self::from(value.clone())
     }
-}
-#[derive(Clone, Debug)]
-pub struct UserSession {
-    pub uid: String,
-    pub display_name: String,
-    pub role: Role,
-}
-#[derive(Clone, Debug, PartialEq)]
-pub enum Role {
-    Admin,
-    User,
 }
 
 impl BookUI {
