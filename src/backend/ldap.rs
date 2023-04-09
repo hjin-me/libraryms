@@ -1,13 +1,7 @@
-use anyhow::anyhow;
 use ldap3::result::Result;
 use ldap3::{Ldap, LdapConnAsync, Scope, SearchEntry, SearchResult};
-#[cfg(feature = "ssr")]
-use once_cell::sync::OnceCell;
-#[cfg(feature = "ssr")]
+use leptos_reactive::use_context;
 use std::sync::Arc;
-
-#[cfg(feature = "ssr")]
-static INSTANCE: OnceCell<Arc<LdapIdent>> = OnceCell::new();
 
 #[cfg(feature = "ssr")]
 pub async fn init(
@@ -15,20 +9,14 @@ pub async fn init(
     base_dn: &str,
     attr: &str,
     bind: Option<(String, String)>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<LdapIdent> {
     let l = LdapIdent::new(url, base_dn, attr, bind).await?;
-    INSTANCE
-        .set(Arc::new(l))
-        .map_err(|_| anyhow::Error::msg("初始化 LdapIndent 失败"))?;
-    Ok(())
+    Ok(l)
 }
 
 #[cfg(feature = "ssr")]
-pub async fn get_ldap_ident() -> anyhow::Result<Arc<LdapIdent>> {
-    Ok(INSTANCE
-        .get()
-        .ok_or(anyhow!("未初始化 LdapIndent"))?
-        .clone())
+pub async fn from_scope(cx: leptos::Scope) -> anyhow::Result<Arc<LdapIdent>> {
+    Ok(use_context::<Arc<LdapIdent>>(cx).ok_or(anyhow::anyhow!("No ldap context found"))?)
 }
 
 #[derive(Clone)]

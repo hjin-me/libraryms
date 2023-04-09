@@ -13,8 +13,8 @@ pub fn BookDetailPage(cx: Scope) -> impl IntoView {
             .unwrap()
     };
 
-    let b = create_resource(cx, book_id_fn, |id| async move {
-        crate::api::books::book_detail(id).await
+    let b = create_resource(cx, book_id_fn, move |id| {
+        crate::api::books::book_detail(cx, id)
     });
 
     let g = move || match b.read(cx) {
@@ -135,11 +135,7 @@ pub fn BookStorage(cx: Scope) -> impl IntoView {
 #[allow(non_snake_case)]
 #[component]
 pub fn BookGallery(cx: Scope) -> impl IntoView {
-    let posts = create_resource(
-        cx,
-        || (),
-        |_| async { crate::api::books::book_list(0, 10).await },
-    );
+    let posts = create_resource(cx, || (), move |_| crate::api::books::book_list(cx, 0, 10));
 
     let g = move || match posts.read(cx) {
         None => None,
@@ -180,11 +176,7 @@ pub fn BookGallery(cx: Scope) -> impl IntoView {
 #[allow(non_snake_case)]
 #[component]
 pub fn BookList(cx: Scope) -> impl IntoView {
-    let posts = create_resource(
-        cx,
-        || (),
-        |_| async { crate::api::books::book_list(0, 10).await },
-    );
+    let posts = create_resource(cx, || (), move |_| crate::api::books::book_list(cx, 0, 10));
     view! {
                 cx,
             <div class="overflow-x-auto">

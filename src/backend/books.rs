@@ -1,28 +1,13 @@
 use anyhow::Result;
-#[cfg(feature = "ssr")]
-use once_cell::sync::OnceCell;
+use leptos_reactive::use_context;
 #[cfg(feature = "ssr")]
 use sqlx::PgPool;
-#[cfg(feature = "ssr")]
 use std::sync::Arc;
 
 #[cfg(feature = "ssr")]
-static INSTANCE: OnceCell<Arc<BookMS>> = OnceCell::new();
-
-#[cfg(feature = "ssr")]
-pub async fn init(pg_dsn: &str, api_key: &str) -> Result<()> {
-    let pool = PgPool::connect(pg_dsn).await?;
-    let bms = BookMS::new(&pool, api_key);
-    INSTANCE.set(Arc::new(bms)).expect("初始化图书管理模块失败");
-    Ok(())
-}
-
-#[cfg(feature = "ssr")]
-pub async fn get_bms() -> Result<Arc<BookMS>> {
-    match INSTANCE.get() {
-        Some(c) => Ok(c.clone()),
-        None => Err(anyhow::anyhow!("初始化图书管理模块未初始化")),
-    }
+pub async fn init(pg_pool: &PgPool, api_key: &str) -> Result<BookMS> {
+    let bms = BookMS::new(pg_pool, api_key);
+    Ok(bms)
 }
 
 use crate::entity::{Book, BookState};
@@ -60,11 +45,18 @@ pub struct BookMS {
     pg: PgPool,
     api_key: String,
 }
+
+impl BookMS {
+    pub fn from_scope(cx: leptos::Scope) -> Arc<Self> {
+        use_context::<Arc<Self>>(cx).unwrap()
+    }
+}
+
 impl BookMS {
     pub fn new(pg: &PgPool, api_key: &str) -> Self {
         Self {
             pg: pg.clone(),
-            api_key: api_key.clone().to_string(),
+            api_key: api_key.to_string(),
         }
     }
     pub async fn get_one_by_id(&self, book_id: &i64) -> Result<Book, Box<dyn std::error::Error>> {
@@ -127,8 +119,8 @@ WHERE b.deleted_at is null
 ORDER BY b.created_at desc
 LIMIT $1 OFFSET $2 ",
         )
-        .bind(&limit)
-        .bind(&offset)
+        .bind(limit)
+        .bind(offset)
         .fetch_all(&self.pg)
         .await?;
 

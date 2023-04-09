@@ -1,9 +1,5 @@
 use crate::backend::conf::get_conf;
-use crate::backend::db::get_client;
-use axum::http::request::Parts;
-use axum::http::StatusCode;
 use cookie::Cookie;
-use http::HeaderName;
 use jsonwebtoken::{decode, DecodingKey, EncodingKey, Validation};
 use leptos_reactive::use_context;
 use serde::{Deserialize, Serialize};
@@ -46,10 +42,13 @@ pub async fn account_info_from_cookies(cx: leptos::Scope) -> Option<AccountInfo>
     .to_string();
 
     let conf = get_conf();
-    let pool = get_client().await.ok()?;
+    let pool = match crate::backend::db::from_scope(cx) {
+        Ok(pool) => pool,
+        Err(_) => return None,
+    };
     match decode::<Claims>(
         &token,
-        &DecodingKey::from_secret(&conf.session_secret.as_bytes()),
+        &DecodingKey::from_secret(conf.session_secret.as_bytes()),
         &Validation::default(),
     ) {
         Ok(token) => match get_account_by_id(&pool, &token.claims.sub).await {
@@ -64,13 +63,12 @@ pub async fn account_info_from_cookies(cx: leptos::Scope) -> Option<AccountInfo>
 }
 pub fn set_account_info(cx: leptos::Scope, sub: &str) {
     let conf = get_conf();
-    let token = gen_access_token(&conf.session_secret.as_bytes(), sub);
+    let token = gen_access_token(conf.session_secret.as_bytes(), sub);
     let mut c = Cookie::new(COOKIE_NAME, token);
     c.set_max_age(time::Duration::days(7));
     c.set_path("/");
-    match use_context::<leptos_axum::ResponseOptions>(cx) {
-        Some(r) => r.insert_header(http::header::SET_COOKIE, c.to_string().parse().unwrap()),
-        None => {}
+    if let Some(r) = use_context::<leptos_axum::ResponseOptions>(cx) {
+        r.insert_header(http::header::SET_COOKIE, c.to_string().parse().unwrap())
     };
 }
 

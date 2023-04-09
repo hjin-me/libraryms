@@ -2,7 +2,6 @@ use crate::api::auth::{Role, UserSession};
 use crate::entity::{Book, BookState};
 use leptos::ServerFnError::ServerError;
 use leptos::*;
-use leptos_router::ToHref;
 use serde::{Deserialize, Serialize};
 use tracing::trace;
 
@@ -13,10 +12,8 @@ pub fn register_server_functions() {
     let _ = BookDetail::register();
 }
 #[server(FastStorageBook, "/api")]
-pub async fn fast_storage_book(isbn: String) -> Result<(), ServerFnError> {
-    let bms = crate::backend::books::get_bms()
-        .await
-        .map_err(|e| ServerError(e.to_string()))?;
+pub async fn fast_storage_book(cx: Scope, isbn: String) -> Result<(), ServerFnError> {
+    let bms = crate::backend::books::BookMS::from_scope(cx);
     bms.storage(isbn.as_str(), "songsong")
         .await
         .map_err(|e| ServerError(e.to_string()))?;
@@ -24,10 +21,8 @@ pub async fn fast_storage_book(isbn: String) -> Result<(), ServerFnError> {
 }
 
 #[server(BookList, "/api")]
-pub async fn book_list(offset: i64, limit: i64) -> Result<Vec<BookUI>, ServerFnError> {
-    let bms = crate::backend::books::get_bms()
-        .await
-        .map_err(|e| ServerError(e.to_string()))?;
+pub async fn book_list(cx: Scope, offset: i64, limit: i64) -> Result<Vec<BookUI>, ServerFnError> {
+    let bms = crate::backend::books::BookMS::from_scope(cx);
     let books = bms
         .list(&limit, &offset)
         .await
@@ -40,11 +35,8 @@ pub async fn book_list(offset: i64, limit: i64) -> Result<Vec<BookUI>, ServerFnE
 }
 
 #[server(BookDetail, "/api")]
-pub async fn book_detail(id: i64) -> Result<BookUI, ServerFnError> {
-    trace!("id: {}", id);
-    let bms = crate::backend::books::get_bms()
-        .await
-        .map_err(|e| ServerError(e.to_string()))?;
+pub async fn book_detail(cx: Scope, id: i64) -> Result<BookUI, ServerFnError> {
+    let bms = crate::backend::books::BookMS::from_scope(cx);
     let mut book: BookUI = bms
         .get_one_by_id(&id)
         .await
