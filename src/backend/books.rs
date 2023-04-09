@@ -209,61 +209,61 @@ RETURNING id
         Ok(())
     }
 
-    // pub async fn borrow(&self, book_id: &i64, who: &str) -> Result<(), Box<dyn std::error::Error>> {
-    //     let mut client = self.pg.get().await?;
-    //     let tc = client.transaction().await?;
-    //     let oid: i64 = tc
-    //         .query_one(
-    //             "INSERT INTO change_logs (operator, source_id, source_type, action, operate_at)
-    //                         VALUES ($1, $2, $3, $4, $5) RETURNING id",
-    //             &[
-    //                 &who,
-    //                 &book_id,
-    //                 &"book",
-    //                 &format!("{} 借出书籍", who),
-    //                 &time::OffsetDateTime::now_utc(),
-    //             ],
-    //         )
-    //         .await?
-    //         .get(0);
-    //     tc.execute(
-    //         "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and deleted_at is null",
-    //         &[&BookState::Borrowed.to_string(), &oid, &book_id],
-    //     )
-    //     .await?;
-    //     tc.commit().await?;
-    //     Ok(())
-    // }
+    pub async fn borrow(&self, book_id: &i64, who: &str) -> Result<()> {
+        let mut tc = self.pg.begin().await?;
 
-    // pub async fn revert_to(
-    //     &self,
-    //     book_id: &i64,
-    //     who: &str,
-    // ) -> Result<(), Box<dyn std::error::Error>> {
-    //     let mut client = self.pg.get().await?;
-    //     let tc = client.transaction().await?;
-    //     let oid: i64 = tc
-    //         .query_one(
-    //             "INSERT INTO change_logs (operator, source_id, source_type, action, operate_at)
-    //                         VALUES ($1, $2, $3, $4, $5) RETURNING id",
-    //             &[
-    //                 &who,
-    //                 &book_id,
-    //                 &"book",
-    //                 &"归还书籍",
-    //                 &time::OffsetDateTime::now_utc(),
-    //             ],
-    //         )
-    //         .await?
-    //         .get(0);
-    //     tc.execute(
-    //         "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and deleted_at is null",
-    //         &[&BookState::Returned.to_string(), &oid, &book_id],
-    //     )
-    //     .await?;
-    //     tc.commit().await?;
-    //     Ok(())
-    // }
+        let oid: i64 = sqlx::query(
+            "INSERT INTO change_logs (operator, source_id, source_type, action, operate_at)
+                            VALUES ($1, $2, $3, $4, $5) RETURNING id",
+        )
+        .bind(who)
+        .bind(book_id)
+        .bind("book")
+        .bind(format!("{} 借出书籍", who))
+        .bind(time::OffsetDateTime::now_utc())
+        .fetch_one(&mut tc)
+        .await?
+        .get(0);
+
+        sqlx::query(
+            "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and deleted_at is null",
+        )
+        .bind(BookState::Borrowed.to_string())
+        .bind(oid)
+        .bind(book_id)
+        .execute(&mut tc)
+        .await?;
+        tc.commit().await?;
+        Ok(())
+    }
+
+    // 归还图书
+    pub async fn revert_to(&self, book_id: &i64, who: &str) -> Result<()> {
+        let mut tc = self.pg.begin().await?;
+        let oid: i64 = sqlx::query(
+            "INSERT INTO change_logs (operator, source_id, source_type, action, operate_at)
+                            VALUES ($1, $2, $3, $4, $5) RETURNING id",
+        )
+        .bind(who)
+        .bind(book_id)
+        .bind("book")
+        .bind(format!("{} 归还书籍", who))
+        .bind(time::OffsetDateTime::now_utc())
+        .fetch_one(&mut tc)
+        .await?
+        .get(0);
+
+        sqlx::query(
+            "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and deleted_at is null",
+        )
+        .bind(BookState::Returned.to_string())
+        .bind(oid)
+        .bind(book_id)
+        .execute(&mut tc)
+        .await?;
+        tc.commit().await?;
+        Ok(())
+    }
 
     // pub async fn confirm(
     //     &self,

@@ -1,6 +1,6 @@
-use crate::api::auth::{Role, UserSession};
+use crate::api::auth::{get_account, Role, UserSession};
 use crate::entity::{Book, BookState};
-use leptos::ServerFnError::ServerError;
+use leptos::ServerFnError::{Request, ServerError};
 use leptos::*;
 use serde::{Deserialize, Serialize};
 use tracing::trace;
@@ -10,11 +10,18 @@ pub fn register_server_functions() {
     let _ = FastStorageBook::register();
     let _ = BookList::register();
     let _ = BookDetail::register();
+    let _ = BorrowBook::register();
 }
 #[server(FastStorageBook, "/api")]
 pub async fn fast_storage_book(cx: Scope, isbn: String) -> Result<(), ServerFnError> {
+    let ac = get_account(cx)
+        .await?
+        .ok_or(Request("Not logged in".to_string()))?;
+    if ac.role != Role::Admin {
+        return Err(Request("Not admin".to_string()));
+    }
     let bms = crate::backend::books::BookMS::from_scope(cx);
-    bms.storage(isbn.as_str(), "songsong")
+    bms.storage(isbn.as_str(), &ac.uid)
         .await
         .map_err(|e| ServerError(e.to_string()))?;
     Ok(())
@@ -50,6 +57,18 @@ pub async fn book_detail(cx: Scope, id: i64) -> Result<BookUI, ServerFnError> {
     }));
 
     Ok(book)
+}
+
+#[server(BorrowBook, "/api")]
+pub async fn borrow_book(cx: Scope, id: i64) -> Result<(), ServerFnError> {
+    let ac = get_account(cx)
+        .await?
+        .ok_or(Request("Not login".to_string()))?;
+    let bms = crate::backend::books::BookMS::from_scope(cx);
+    bms.borrow(&id, ac.uid.as_str())
+        .await
+        .map_err(|e| ServerError(e.to_string()))?;
+    Ok(())
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

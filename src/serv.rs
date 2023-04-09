@@ -105,7 +105,6 @@ pub async fn serv() {
         .layer(Extension(Arc::new(leptos_options)))
         .layer(Extension(a_pg_pool))
         .layer(Extension(a_bms));
-    // .layer(Extension(Arc<BookMS>));
     // .layer(
     //     ServiceBuilder::new()
     //         .layer(TraceLayer::new_for_http())

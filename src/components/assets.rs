@@ -1,6 +1,5 @@
 use crate::components::book::*;
 use leptos::*;
-use leptos_router::*;
 
 #[allow(non_snake_case)]
 #[component]

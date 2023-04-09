@@ -1,4 +1,3 @@
-use futures::FutureExt;
 use leptos::*;
 use serde::{Deserialize, Serialize};
 
@@ -9,8 +8,6 @@ pub fn register_server_functions() {
 }
 #[server(Login, "/api")]
 pub async fn login(cx: Scope, username: String, password: String) -> Result<(), ServerFnError> {
-    // use axum::body::HttpBody;
-    // dbg!(username, password);
     let ident = crate::backend::ldap::from_scope(cx)
         .await
         .map_err(|e| ServerFnError::ServerError(e.to_string()))?;

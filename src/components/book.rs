@@ -148,13 +148,13 @@ pub fn BookGallery(cx: Scope) -> impl IntoView {
             view=move |cx, b: BookUI| {
                 view! {
                     cx,
-              <A href=format!("/book/{}", b.id) class="group">
-          <div class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-lg bg-gray-200 xl:aspect-h-8 xl:aspect-w-7">
-            <img loading="lazy" referrerpolicy="no-referrer" src={b.thumbnail} class="h-full w-full object-contain object-center group-hover:opacity-75" />
-          </div>
-          <h3 class="mt-4 text-sm font-medium text-gray-900 overflow-hidden">{b.title}</h3>
-          <p class="mt-1 text-sm text-gray-500">{b.authors.join(", ")}</p>
-        </A>
+                <A href=format!("/book/{}", b.id) class="group">
+                <div class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-lg bg-gray-200 xl:aspect-h-8 xl:aspect-w-7">
+                    <img loading="lazy" referrerpolicy="no-referrer" src={b.thumbnail} class="h-full w-full object-contain object-center group-hover:opacity-75" />
+                </div>
+                <h3 class="mt-4 text-sm font-medium text-gray-900 overflow-hidden">{b.title}</h3>
+                <p class="mt-1 text-sm text-gray-500">{b.authors.join(", ")}</p>
+                </A>
                 }
             }/>
         }),
