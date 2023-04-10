@@ -29,7 +29,7 @@ struct Args {
     /// Number of times to greet
     #[arg(short, long, default_value = "./config.toml")]
     config: String,
-    #[arg(short, long, default_value = "info")]
+    #[arg(short, long, default_value = "debug")]
     log: String,
 }
 
@@ -129,7 +129,6 @@ async fn server_fn_handler(
     request: Request<AxumBody>,
 ) -> impl IntoResponse {
     log!("{:?}", path);
-    dbg!(&pool);
 
     handle_server_fns_with_context(
         path,

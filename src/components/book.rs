@@ -13,16 +13,27 @@ pub fn BookDetailPage(cx: Scope) -> impl IntoView {
             .unwrap()
     };
 
-    let b = create_resource(cx, book_id_fn, move |id| {
-        crate::api::books::book_detail(cx, id)
-    });
+    let borrow_act = create_server_action::<crate::api::books::BorrowBook>(cx);
+    let revert_to_act = create_server_action::<crate::api::books::ReturnBook>(cx);
+
+    let b = create_resource(
+        cx,
+        move || {
+            (
+                book_id_fn(),
+                borrow_act.version().get(),
+                revert_to_act.version().get(),
+            )
+        },
+        move |(id, _, _)| crate::api::books::book_detail(cx, id),
+    );
 
     let g = move || match b.read(cx) {
         None => None,
         Some(Err(_)) => None,
         Some(Ok(book)) => Some(view! {
             cx,
-            <BookDetail book=book/>
+            <BookDetail book=book borrow=borrow_act revert=revert_to_act/>
         }),
     };
 
@@ -36,54 +47,78 @@ pub fn BookDetailPage(cx: Scope) -> impl IntoView {
 
 #[allow(non_snake_case)]
 #[component]
-pub fn BookDetail(cx: Scope, #[prop()] book: BookUI) -> impl IntoView {
+pub fn BookDetail(
+    cx: Scope,
+    #[prop()] book: BookUI,
+    borrow: Action<crate::api::books::BorrowBook, Result<(), ServerFnError>>,
+    revert: Action<crate::api::books::ReturnBook, Result<(), ServerFnError>>,
+) -> impl IntoView {
     let act_btn :Vec<_>= book.actions.iter().map(move |a| {
         match a {
             BookAction::Borrow => view! {
                     cx,
+                <ActionForm action=borrow>
+                    <input type="hidden" name="id" value=book.id/>
                     <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
                     "借阅"
                     </button>
-            },
+                </ActionForm>
+            }.into_view(cx),
             BookAction::Lost => view! {
                     cx,
+                <ActionForm action=revert>
+                    <input type="hidden" name="id" value=book.id/>
                     <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
                     "标记遗失"
                     </button>
-            },
+                </ActionForm>
+            }.into_view(cx),
             BookAction::Return => view! {
                     cx,
+                <ActionForm action=revert>
+                    <input type="hidden" name="id" value=book.id/>
                     <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
                     "归还"
                     </button>
-            },
+                </ActionForm>
+            }.into_view(cx),
             BookAction::Reset => view! {
                     cx,
+                <ActionForm action=borrow>
+                    <input type="hidden" name="id" value=book.id/>
                     <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
                     "重置状态"
                     </button>
-            },
+                </ActionForm>
+            }.into_view(cx),
             BookAction::Delete=> view! {
                     cx,
+                <ActionForm action=borrow>
+                    <input type="hidden" name="id" value=book.id/>
                     <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
                     "删除"
                     </button>
-            },
+                </ActionForm>
+            }.into_view(cx),
             BookAction::Lost => view! {
                     cx,
+                <ActionForm action=borrow>
+                    <input type="hidden" name="id" value=book.id/>
                     <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
                     "标记遗失"
                     </button>
-            },
-            _ => {
-
-                view! {
+                </ActionForm>
+            }.into_view(cx),
+            _ => view! {
                     cx,
+                <ActionForm action=borrow>
+                    <input type="hidden" name="id" value=book.id/>
                     <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
                     "其他"
                     </button>
-                }
-            }
+                </ActionForm>
+            }.into_view(cx)
+
         }
     }).collect();
     view! {

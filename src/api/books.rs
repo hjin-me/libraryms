@@ -11,6 +11,7 @@ pub fn register_server_functions() {
     let _ = BookList::register();
     let _ = BookDetail::register();
     let _ = BorrowBook::register();
+    let _ = ReturnBook::register();
 }
 #[server(FastStorageBook, "/api")]
 pub async fn fast_storage_book(cx: Scope, isbn: String) -> Result<(), ServerFnError> {
@@ -49,12 +50,9 @@ pub async fn book_detail(cx: Scope, id: i64) -> Result<BookUI, ServerFnError> {
         .await
         .map_err(|e| ServerError(e.to_string()))?
         .into();
+    let ac = get_account(cx).await?;
 
-    book.bind_role(&Some(UserSession {
-        uid: "songsong".to_string(),
-        display_name: "SS".to_string(),
-        role: Role::Admin,
-    }));
+    book.bind_role(&ac);
 
     Ok(book)
 }
@@ -66,6 +64,17 @@ pub async fn borrow_book(cx: Scope, id: i64) -> Result<(), ServerFnError> {
         .ok_or(Request("Not login".to_string()))?;
     let bms = crate::backend::books::BookMS::from_scope(cx);
     bms.borrow(&id, ac.uid.as_str())
+        .await
+        .map_err(|e| ServerError(e.to_string()))?;
+    Ok(())
+}
+#[server(ReturnBook, "/api")]
+pub async fn return_book(cx: Scope, id: i64) -> Result<(), ServerFnError> {
+    let ac = get_account(cx)
+        .await?
+        .ok_or(Request("Not login".to_string()))?;
+    let bms = crate::backend::books::BookMS::from_scope(cx);
+    bms.revert_to(&id, ac.uid.as_str())
         .await
         .map_err(|e| ServerError(e.to_string()))?;
     Ok(())

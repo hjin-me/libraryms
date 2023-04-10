@@ -39,6 +39,7 @@ pub enum Role {
 #[server(GetAccount, "/api")]
 pub async fn get_account(cx: Scope) -> Result<Option<UserSession>, ServerFnError> {
     let a = crate::backend::auth::account_info_from_cookies(cx).await;
+    tracing::debug!("account info: {:?}", &a);
 
     Ok(a.map(|a| UserSession {
         uid: a.id,

@@ -5,7 +5,7 @@ use leptos_reactive::use_context;
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Row};
 use std::string::ToString;
-use tracing::trace;
+use tracing::debug;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
@@ -24,10 +24,12 @@ pub async fn account_info_from_cookies(cx: leptos::Scope) -> Option<AccountInfo>
         Some(rp) => rp,
         None => return None,
     };
+    debug!("request parts: {:?}", &rp);
     let h = match rp.headers.get(http::header::COOKIE) {
         Some(r) => String::from_utf8_lossy(r.as_bytes()).to_string(),
         None => return None,
     };
+    debug!("cookies: {:?}", &h);
     let token = match Cookie::split_parse(h).find(|cookie| match cookie {
         Ok(cookie) => cookie.name() == COOKIE_NAME,
         Err(_) => false,
@@ -40,8 +42,10 @@ pub async fn account_info_from_cookies(cx: leptos::Scope) -> Option<AccountInfo>
     }
     .value()
     .to_string();
+    debug!("token: {:?}", &token);
 
     let conf = get_conf();
+    debug!("conf: {:?}", &conf);
     let pool = match crate::backend::db::from_scope(cx) {
         Ok(pool) => pool,
         Err(_) => return None,
@@ -54,11 +58,14 @@ pub async fn account_info_from_cookies(cx: leptos::Scope) -> Option<AccountInfo>
         Ok(token) => match get_account_by_id(&pool, &token.claims.sub).await {
             Ok(ac) => Some(ac),
             Err(_) => {
-                trace!("数据库查找用户失败");
+                debug!("数据库查找用户失败");
                 None
             }
         },
-        Err(e) => None,
+        Err(e) => {
+            debug!("token解析失败: {:?}", e);
+            None
+        }
     }
 }
 pub fn set_account_info(cx: leptos::Scope, sub: &str) {
