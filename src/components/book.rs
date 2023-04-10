@@ -1,4 +1,5 @@
 use crate::api::books::{BookAction, BookUI};
+use crate::entity::BookState;
 use leptos::*;
 use leptos_router::*;
 use time::OffsetDateTime;
@@ -53,7 +54,13 @@ pub fn BookDetail(
     borrow: Action<crate::api::books::BorrowBook, Result<(), ServerFnError>>,
     revert: Action<crate::api::books::ReturnBook, Result<(), ServerFnError>>,
 ) -> impl IntoView {
-    let act_btn :Vec<_>= book.actions.iter().map(move |a| {
+    let act_btn :Vec<_>= book.actions.iter().filter(|a| {
+        match a {
+            BookAction::Borrow => true,
+            BookAction::Return => true,
+            _ => false
+        }
+    }).map(move |a| {
         match a {
             BookAction::Borrow => view! {
                     cx,
@@ -61,15 +68,6 @@ pub fn BookDetail(
                     <input type="hidden" name="id" value=book.id/>
                     <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
                     "借阅"
-                    </button>
-                </ActionForm>
-            }.into_view(cx),
-            BookAction::Lost => view! {
-                    cx,
-                <ActionForm action=revert>
-                    <input type="hidden" name="id" value=book.id/>
-                    <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
-                    "标记遗失"
                     </button>
                 </ActionForm>
             }.into_view(cx),
@@ -82,45 +80,42 @@ pub fn BookDetail(
                     </button>
                 </ActionForm>
             }.into_view(cx),
-            BookAction::Reset => view! {
-                    cx,
-                <ActionForm action=borrow>
-                    <input type="hidden" name="id" value=book.id/>
-                    <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
-                    "重置状态"
-                    </button>
-                </ActionForm>
-            }.into_view(cx),
-            BookAction::Delete=> view! {
-                    cx,
-                <ActionForm action=borrow>
-                    <input type="hidden" name="id" value=book.id/>
-                    <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
-                    "删除"
-                    </button>
-                </ActionForm>
-            }.into_view(cx),
-            BookAction::Lost => view! {
-                    cx,
-                <ActionForm action=borrow>
-                    <input type="hidden" name="id" value=book.id/>
-                    <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
-                    "标记遗失"
-                    </button>
-                </ActionForm>
-            }.into_view(cx),
-            _ => view! {
-                    cx,
-                <ActionForm action=borrow>
-                    <input type="hidden" name="id" value=book.id/>
-                    <button type="submit" class="block rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500">
-                    "其他"
-                    </button>
-                </ActionForm>
-            }.into_view(cx)
-
+            _ => view! { cx, <span></span> }.into_view(cx)
         }
     }).collect();
+
+    let book_state = move || match book.state {
+        crate::entity::BookState::Available => view! {cx,
+        <strong class="rounded-full border border-green-600 bg-gray-100 px-3 py-0.5 text-xs font-medium tracking-wide text-green-600">
+            "可借阅"
+            </strong>},
+        crate::entity::BookState::Borrowed => {
+            view! {cx, <strong class="rounded-full border border-gray-600 bg-gray-100 px-3 py-0.5 text-xs font-medium tracking-wide text-gray-600">
+            "已借出"
+            </strong>}
+        }
+        crate::entity::BookState::Returned => {
+            view! {cx, <strong class="rounded-full border border-yellow-600 bg-gray-100 px-3 py-0.5 text-xs font-medium tracking-wide text-yellow-600">
+            "归还中"
+            </strong>}
+        }
+        crate::entity::BookState::Lost => {
+            view! {cx, <strong class="rounded-full border border-red-600 bg-gray-100 px-3 py-0.5 text-xs font-medium tracking-wide text-red-600">
+            "已丢失"
+            </strong>}
+        }
+        crate::entity::BookState::Deleted => {
+            view! {cx, <strong class="rounded-full border border-orange-600 bg-gray-100 px-3 py-0.5 text-xs font-medium tracking-wide text-orange-600">
+            "已损坏"
+            </strong>}
+        }
+        crate::entity::BookState::Unknown => {
+            view! {cx, <strong class="rounded-full border border-purple-600 bg-gray-100 px-3 py-0.5 text-xs font-medium tracking-wide text-purple-600">
+            "状态异常"
+            </strong>}
+        }
+    };
+
     view! {
     cx,
     <section>
@@ -130,9 +125,8 @@ pub fn BookDetail(
                     <img loading="lazy" referrerpolicy="no-referrer" src=book.thumbnail class="aspect-square w-full rounded-xl object-cover" />
                 </div>
                 <div class="sticky top-0 col-span-2">
-                    <strong class="rounded-full border border-blue-600 bg-gray-100 px-3 py-0.5 text-xs font-medium tracking-wide text-blue-600">
-                        "可借阅"
-                    </strong>
+
+                    {book_state}
                     <div class="mt-8 flex justify-between">
                         <div class="max-w-[50ch] space-y-2">
                             <h1 class="text-xl font-bold sm:text-2xl">{book.title}</h1>
@@ -155,11 +149,13 @@ pub fn BookStorage(cx: Scope) -> impl IntoView {
     let fast_storage_book_act = create_server_action::<crate::api::books::FastStorageBook>(cx);
     view! {
         cx,
-        <ActionForm class="row g-3" action=fast_storage_book_act>
-            <label for="isbn" class="block overflow-hidden rounded-md border border-gray-200 px-3 py-2 shadow-sm focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600">
-                <span class="text-xs font-medium text-gray-700"> "ISBN" </span>
-                <input type="text" id="isbn" name="isbn" class="mt-1 w-full border-none p-0 focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"/>
-            </label>
+        <ActionForm class="grid grid-cols-2 gap-4  row g-3" action=fast_storage_book_act>
+            <div>
+                <label for="isbn" class="sr-only">"ISBN"</label>
+                    <input type="text" name="isbn"
+                        class="w-full rounded-lg border-gray-200 p-3 text-sm"
+                        placeholder="输入书籍ISBN" autocomplete="off"/>
+            </div>
 
             <button type="submit" class="inline-block shrink-0 rounded-md border border-blue-600 bg-blue-600 px-12 py-3 text-sm font-medium text-white transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500">"入库"</button>
 
@@ -229,12 +225,7 @@ pub fn BookList(cx: Scope) -> impl IntoView {
             <th
               class="whitespace-nowrap px-4 py-2 text-left font-medium text-gray-900"
             >
-              "作者"
-            </th>
-            <th
-              class="whitespace-nowrap px-4 py-2 text-left font-medium text-gray-900"
-            >
-              "上次变更"
+              "状态"
             </th> <th
               class="whitespace-nowrap px-4 py-2 text-left font-medium text-gray-900"
             >
@@ -262,21 +253,70 @@ pub fn BookList(cx: Scope) -> impl IntoView {
                                 view! { cx,
             <tr>
             <th class="whitespace-nowrap px-4 py-2 font-medium text-gray-900">{b.id}</th>
-            <td class="whitespace-nowrap px-4 py-2 text-gray-700"><span class="ellipsis">{b.title}</span></td>
-            <td class="whitespace-nowrap px-4 py-2 text-gray-700">{b.authors.join(", ")}</td>
-            <td class="whitespace-nowrap px-4 py-2 text-gray-700">{b.state.to_string()}</td>
-
-            <td class="whitespace-nowrap px-4 py-2 text-gray-700">{b.operate_at.to_string()}</td>
+            <td class="whitespace-nowrap px-4 py-2 text-gray-700 " title=&b.title>
+                                    <div class="truncate max-w-xs">{b.title}</div>
+                                    <div class="truncate max-w-xs pl-4">{b.authors.join(", ")}</div>
+                                    </td>
+            <td class="whitespace-nowrap px-4 py-2 text-gray-700">
+                                    {b.state.to_string()}
+                                    {
+                                        move || if b.state == BookState::Returned {
+                                            Some(view! {
+                                                cx,
+                                                <A href=format!("/book/{}/confirm", b.id)
+                                        class="ml-4 inline-block rounded bg-green-600 px-4 py-2 text-xs font-medium text-white hover:bg-green-700"
+                                    >
+                                        "确认归还"
+                                    </A>
+                                            })
+                                        } else {
+                                            None
+                                        }
+                                    }
+                                    </td>
             <td class="whitespace-nowrap px-4 py-2 text-gray-700">{b.isbn}</td>
             <td class="whitespace-nowrap px-4 py-2 text-gray-700">{b.publisher}</td>
                                     <td class="whitespace-nowrap px-4 py-2">
-              <A
-                href="#"
-                class="inline-block rounded bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700"
-              >
-                "View"
-              </A>
-            </td>
+                                    {
+                                        move || b.actions.iter().filter(|a| {
+                                        match a {
+                                            BookAction::Lost => true,
+                                            BookAction::Reset => true,
+                                            BookAction::Delete => true,
+                                            _ => false,
+                                        }
+                                    }).map(|a| match a {
+                                        BookAction::Lost => view! {
+                                            cx,
+                                            <A
+                                                href=format!("/book/{}/lost", b.id)
+                                                class="mr-4 inline-block rounded bg-black px-4 py-2 text-xs font-medium text-white"
+                                            >
+                                                "丢失"
+                                            </A>
+                                        }.into_view(cx),
+                                        BookAction::Reset => view! {
+                                            cx,
+                                            <A
+                                                href=format!("/book/{}/reset", b.id)
+                                                class="mr-4 inline-block rounded bg-yellow-600 px-4 py-2 text-xs font-medium text-white hover:bg-yellow-700"
+                                            >
+                                                "重置"
+                                            </A>
+                                        }.into_view(cx),
+                                        BookAction::Delete => view! {
+                                            cx,
+                                            <A
+                                                href=format!("/book/{}/delete", b.id)
+                                                class="mr-4 inline-block rounded bg-red-600 px-4 py-2 text-xs font-medium text-white hover:bg-red-700"
+                                            >
+                                                "删除"
+                                            </A>
+                                        }.into_view(cx),
+                                        _ => view! { cx, <div/>}.into_view(cx)
+                                        }).collect::<Vec<_>>()
+                                    }
+                        </td>
                     </tr>
                                 }.into_any()
                             }

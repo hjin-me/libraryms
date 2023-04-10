@@ -1,27 +1,26 @@
-use axum::extract::{Path, RawQuery};
+use axum::extract::Path;
 use axum::response::IntoResponse;
 use axum::{
     body::Body as AxumBody,
     extract::Extension,
     http::{header::HeaderMap, Request},
-    routing::{get, post},
+    routing::get,
     Router,
 };
 use clap::Parser;
 use leptos::*;
 use leptos_axum::{generate_route_list, handle_server_fns_with_context, LeptosRoutes};
 use libraryms::backend::books::BookMS;
-use libraryms::backend::conf;
 use libraryms::backend::conf::{get_conf, parse_conf};
+use libraryms::backend::ldap::LdapIdent;
 use libraryms::components::home::*;
 use libraryms::fallback::file_and_error_handler;
 use sqlx::PgPool;
-use std::fs;
 use std::sync::Arc;
 use tower::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
 use tower_http::trace::TraceLayer;
-use tracing::{info, Level};
+use tracing::{debug, info, Level};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -60,7 +59,7 @@ pub async fn serv() {
         .await
         .expect("连接数据库失败");
 
-    libraryms::backend::ldap::init(
+    let ldap_ident = libraryms::backend::ldap::init(
         &conf.ldap.url,
         &conf.ldap.base,
         &conf.ldap.attr,
@@ -75,8 +74,10 @@ pub async fn serv() {
     let bms = libraryms::backend::books::init(&pg_pool, &conf.isbn_api_key)
         .await
         .expect("图书管理模块初始化失败");
+    let a_ldap_ident = Arc::new(ldap_ident);
     let a_bms = Arc::new(bms);
     let a_pg_pool = Arc::new(pg_pool);
+    let l_ldap_ident = a_ldap_ident.clone();
     let l_bms = a_bms.clone();
     let l_pg_pool = a_pg_pool.clone();
 
@@ -95,6 +96,7 @@ pub async fn serv() {
             routes,
             move |cx| {
                 provide_context(cx, l_bms.clone());
+                provide_context(cx, l_ldap_ident.clone());
                 provide_context(cx, l_pg_pool.clone());
             },
             |cx| {
@@ -104,6 +106,7 @@ pub async fn serv() {
         .fallback(file_and_error_handler)
         .layer(Extension(Arc::new(leptos_options)))
         .layer(Extension(a_pg_pool))
+        .layer(Extension(a_ldap_ident))
         .layer(Extension(a_bms));
     // .layer(
     //     ServiceBuilder::new()
@@ -123,12 +126,13 @@ pub async fn serv() {
 async fn server_fn_handler(
     Extension(pool): Extension<Arc<PgPool>>,
     Extension(bms): Extension<Arc<BookMS>>,
+    Extension(ldap_ident): Extension<Arc<LdapIdent>>,
     path: Path<String>,
     headers: HeaderMap,
     // raw_query: RawQuery,
     request: Request<AxumBody>,
 ) -> impl IntoResponse {
-    log!("{:?}", path);
+    debug!("{:?}", path);
 
     handle_server_fns_with_context(
         path,
@@ -136,6 +140,7 @@ async fn server_fn_handler(
         move |cx| {
             provide_context(cx, bms.clone());
             provide_context(cx, pool.clone());
+            provide_context(cx, ldap_ident.clone());
         },
         request,
     )

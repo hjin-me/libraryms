@@ -18,7 +18,6 @@ pub struct Config {
     pub isbn_api_key: String,
 }
 
-use anyhow::Result;
 #[cfg(feature = "ssr")]
 use once_cell::sync::OnceCell;
 #[cfg(feature = "ssr")]

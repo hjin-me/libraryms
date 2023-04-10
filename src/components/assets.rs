@@ -6,11 +6,11 @@ use leptos::*;
 pub fn AssetsPage(cx: Scope) -> impl IntoView {
     view! {
         cx,
-        <div class="mx-auto max-w-screen-xl px-4 grid grid-cols-5 items-start gap-8">
-            <div class="col-span-1">
+        <div class="mx-auto max-w-screen-xl px-4 gap-8">
+            <div >
                 <BookStorage/>
             </div>
-            <div class="col-span-4">
+            <div >
                 <BookList />
             </div>
         </div>

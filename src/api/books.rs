@@ -3,7 +3,7 @@ use crate::entity::{Book, BookState};
 use leptos::ServerFnError::{Request, ServerError};
 use leptos::*;
 use serde::{Deserialize, Serialize};
-use tracing::trace;
+// use tracing::trace;
 
 #[cfg(feature = "ssr")]
 pub fn register_server_functions() {
@@ -30,13 +30,18 @@ pub async fn fast_storage_book(cx: Scope, isbn: String) -> Result<(), ServerFnEr
 
 #[server(BookList, "/api")]
 pub async fn book_list(cx: Scope, offset: i64, limit: i64) -> Result<Vec<BookUI>, ServerFnError> {
+    let ac = get_account(cx).await?;
     let bms = crate::backend::books::BookMS::from_scope(cx);
     let books = bms
         .list(&limit, &offset)
         .await
         .map_err(|e| ServerError(e.to_string()))?
         .iter()
-        .map(|b| BookUI::from(b))
+        .map(|b| {
+            let mut b = BookUI::from(b);
+            b.bind_role(&ac);
+            b
+        })
         .collect();
 
     Ok(books)
