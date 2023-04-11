@@ -25,13 +25,14 @@ pub fn BlogApp(cx: Scope) -> impl IntoView {
       />
       <Stylesheet href="/pkg/hj.css"/>
       <Router>
-        <Header />
+        <Header action=login_action />
         <main>
         <Routes>
         <Route path="" view=|cx| view! {cx,<DefaultPage/>} ssr=InOrder/>
         <Route path="book/:id" view=|cx| view! {cx,<BookDetailPage/>} ssr=InOrder/>
         <Route path="assets-mgr" view=|cx| view! {cx,<AssetsPage/>} ssr=InOrder/>
         <Route path="login" view= move |cx| view! {cx,<LoginPage action=login_action/>} ssr=InOrder />
+        <Route path="my" view= move |cx| view! {cx,<div>"My"</div>} ssr=InOrder />
         </Routes>
         </main>
       </Router>
@@ -39,9 +40,16 @@ pub fn BlogApp(cx: Scope) -> impl IntoView {
 }
 #[allow(non_snake_case)]
 #[component]
-pub fn Header(cx: Scope) -> impl IntoView {
+pub fn Header(
+    cx: Scope,
+    action: Action<crate::api::auth::Login, Result<(), ServerFnError>>,
+) -> impl IntoView {
     // let account = create_resource(cx, || {}, move async |_| { get_account(cx).await });
-    let account = create_resource(cx, || (), move |_| crate::api::auth::get_account(cx));
+    let account = create_resource(
+        cx,
+        move || (action.version().get()),
+        move |_| crate::api::auth::get_account(cx),
+    );
 
     let u = {
         move || {
@@ -87,10 +95,6 @@ pub fn Header(cx: Scope) -> impl IntoView {
           </div>
 
         <div class="flex items-center gap-4">
-        <a href="#">
-          <span class="sr-only">"Logo"</span>
-          <span class="h-10 w-20 rounded-lg bg-gray-200"></span>
-        </a>
 
         <form class="mb-0 hidden lg:flex">
           <div class="relative">
