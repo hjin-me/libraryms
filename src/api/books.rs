@@ -30,8 +30,16 @@ pub async fn fast_storage_book(cx: Scope, isbn: String) -> Result<(), ServerFnEr
 }
 
 #[server(BookList, "/api")]
-pub async fn book_list(cx: Scope, offset: i64, limit: i64) -> Result<Vec<BookUI>, ServerFnError> {
+pub async fn book_list(
+    cx: Scope,
+    offset: Option<i64>,
+    limit: Option<i64>,
+    q: Option<String>,
+) -> Result<Vec<BookUI>, ServerFnError> {
+    let limit = limit.unwrap_or(10);
+    let offset = offset.unwrap_or(0);
     let ac = get_account(cx).await?;
+    dbg!(q);
     let bms = crate::backend::books::BookMS::from_scope(cx);
     let books = bms
         .list(&limit, &offset)
