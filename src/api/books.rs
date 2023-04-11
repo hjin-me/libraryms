@@ -12,6 +12,7 @@ pub fn register_server_functions() {
     let _ = BookDetail::register();
     let _ = BorrowBook::register();
     let _ = ReturnBook::register();
+    let _ = ConfirmReturnBook::register();
 }
 #[server(FastStorageBook, "/api")]
 pub async fn fast_storage_book(cx: Scope, isbn: String) -> Result<(), ServerFnError> {
@@ -80,6 +81,20 @@ pub async fn return_book(cx: Scope, id: i64) -> Result<(), ServerFnError> {
         .ok_or(Request("Not login".to_string()))?;
     let bms = crate::backend::books::BookMS::from_scope(cx);
     bms.revert_to(&id, ac.uid.as_str())
+        .await
+        .map_err(|e| ServerError(e.to_string()))?;
+    Ok(())
+}
+#[server(ConfirmReturnBook, "/api")]
+pub async fn confirm_return_book(cx: Scope, id: i64) -> Result<(), ServerFnError> {
+    let ac = get_account(cx)
+        .await?
+        .ok_or(Request("Not login".to_string()))?;
+    if ac.role != Role::Admin {
+        return Err(Request("Not admin".to_string()));
+    }
+    let bms = crate::backend::books::BookMS::from_scope(cx);
+    bms.confirm(&id, &ac.uid)
         .await
         .map_err(|e| ServerError(e.to_string()))?;
     Ok(())

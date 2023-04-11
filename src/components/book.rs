@@ -85,31 +85,31 @@ pub fn BookDetail(
     }).collect();
 
     let book_state = move || match book.state {
-        crate::entity::BookState::Available => view! {cx,
+        BookState::Available => view! {cx,
         <strong class="rounded-full border border-green-600 bg-gray-100 px-3 py-0.5 text-xs font-medium tracking-wide text-green-600">
             "可借阅"
             </strong>},
-        crate::entity::BookState::Borrowed => {
+        BookState::Borrowed => {
             view! {cx, <strong class="rounded-full border border-gray-600 bg-gray-100 px-3 py-0.5 text-xs font-medium tracking-wide text-gray-600">
             "已借出"
             </strong>}
         }
-        crate::entity::BookState::Returned => {
+        BookState::Returned => {
             view! {cx, <strong class="rounded-full border border-yellow-600 bg-gray-100 px-3 py-0.5 text-xs font-medium tracking-wide text-yellow-600">
             "归还中"
             </strong>}
         }
-        crate::entity::BookState::Lost => {
+        BookState::Lost => {
             view! {cx, <strong class="rounded-full border border-red-600 bg-gray-100 px-3 py-0.5 text-xs font-medium tracking-wide text-red-600">
             "已丢失"
             </strong>}
         }
-        crate::entity::BookState::Deleted => {
+        BookState::Deleted => {
             view! {cx, <strong class="rounded-full border border-orange-600 bg-gray-100 px-3 py-0.5 text-xs font-medium tracking-wide text-orange-600">
             "已损坏"
             </strong>}
         }
-        crate::entity::BookState::Unknown => {
+        BookState::Unknown => {
             view! {cx, <strong class="rounded-full border border-purple-600 bg-gray-100 px-3 py-0.5 text-xs font-medium tracking-wide text-purple-600">
             "状态异常"
             </strong>}
@@ -207,7 +207,12 @@ pub fn BookGallery(cx: Scope) -> impl IntoView {
 #[allow(non_snake_case)]
 #[component]
 pub fn BookList(cx: Scope) -> impl IntoView {
-    let posts = create_resource(cx, || (), move |_| crate::api::books::book_list(cx, 0, 10));
+    let confirm_act = create_server_action::<crate::api::books::ConfirmReturnBook>(cx);
+    let posts = create_resource(
+        cx,
+        move || (confirm_act.version().get()),
+        move |_| crate::api::books::book_list(cx, 0, 10),
+    );
     view! {
                 cx,
             <div class="overflow-x-auto">
@@ -263,11 +268,13 @@ pub fn BookList(cx: Scope) -> impl IntoView {
                                         move || if b.state == BookState::Returned {
                                             Some(view! {
                                                 cx,
-                                                <A href=format!("/book/{}/confirm", b.id)
+                                            <ActionForm action=confirm_act class="inline-block">
+                                            <input type="hidden" value=b.id name="id" />
+                                                <button type="submit"
                                         class="ml-4 inline-block rounded bg-green-600 px-4 py-2 text-xs font-medium text-white hover:bg-green-700"
                                     >
                                         "确认归还"
-                                    </A>
+                                    </button></ActionForm>
                                             })
                                         } else {
                                             None
