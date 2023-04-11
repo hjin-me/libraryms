@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use ldap3::result::Result;
 use ldap3::{Ldap, LdapConnAsync, Scope, SearchEntry, SearchResult};
 use leptos_reactive::use_context;
@@ -48,16 +49,29 @@ impl LdapIdent {
     pub async fn search(&self, uid: &str) -> Result<Vec<SearchEntry>> {
         Ok(self._search(&format!("{}*", uid)).await?)
     }
-    pub async fn bind(&self, uid: &str, password: &str) -> Result<bool> {
+    pub async fn bind(&self, uid: &str, password: &str) -> anyhow::Result<AccountInfo> {
         let rs = self._search(&uid).await?;
         if rs.len() != 1 {
-            return Ok(false);
+            return Err(anyhow!("Invalid username or password"));
         }
+        let entry = rs[0].clone();
+        let uid = entry
+            .attrs
+            .get(&self.attr)
+            .unwrap()
+            .get(0)
+            .unwrap()
+            .to_string();
+        let display_name = match entry.attrs.get("displayName") {
+            Some(v) => v.get(0).unwrap_or(&uid).to_string(),
+            None => uid.clone(),
+        };
+        let ac = AccountInfo { uid, display_name };
         let mut ldap = self.ldap.clone();
         ldap.simple_bind(&rs.get(0).unwrap().dn, &password)
             .await?
-            .success()
-            .map_or(Ok(false), |_| Ok(true))
+            .success()?;
+        Ok(ac)
     }
     async fn _search(&self, uid: &str) -> Result<Vec<SearchEntry>> {
         let filter = format!("(&({}={}))", self.attr, uid);

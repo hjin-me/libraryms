@@ -15,13 +15,12 @@ pub async fn login(cx: Scope, username: String, password: String) -> Result<(), 
         .bind(&username, &password)
         .await
         .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
-    if r {
-        crate::backend::auth::set_account_info(cx, &username);
-        leptos_axum::redirect(cx, "/assets-mgr");
-        return Ok(());
-    }
-
-    Ok(())
+    crate::backend::auth::try_add_new_account(cx, &r.uid, &r.display_name)
+        .await
+        .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
+    crate::backend::auth::set_account_info(cx, &r.uid);
+    leptos_axum::redirect(cx, "/assets-mgr");
+    return Ok(());
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -68,6 +68,27 @@ pub async fn account_info_from_cookies(cx: leptos::Scope) -> Option<AccountInfo>
         }
     }
 }
+pub async fn try_add_new_account(
+    cx: leptos::Scope,
+    id: &str,
+    display_name: &str,
+) -> anyhow::Result<()> {
+    let pool = crate::backend::db::from_scope(cx)?;
+    sqlx::query(
+        r#"
+        INSERT INTO accounts (id, display_name, role, created_at)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (id) DO NOTHING
+        "#,
+    )
+    .bind(id)
+    .bind(display_name)
+    .bind(Role::User.to_string())
+    .bind(time::OffsetDateTime::now_utc())
+    .execute(pool.as_ref())
+    .await?;
+    Ok(())
+}
 pub fn set_account_info(cx: leptos::Scope, sub: &str) {
     let conf = get_conf();
     let token = gen_access_token(conf.session_secret.as_bytes(), sub);
