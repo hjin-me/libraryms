@@ -1,6 +1,6 @@
 use crate::api::books::{BookAction, BookUI};
+use crate::api::entity::BookState;
 use crate::components::pagination::*;
-use crate::entity::BookState;
 use leptos::*;
 use leptos_router::*;
 use time::OffsetDateTime;
@@ -167,10 +167,15 @@ pub fn BookStorage(cx: Scope) -> impl IntoView {
 #[allow(non_snake_case)]
 #[component]
 pub fn BookGallery(cx: Scope) -> impl IntoView {
+    // reactive access to URL query strings
+    let query = use_query_map(cx);
+    // search stored as ?q=
+    let search = move || query().get("q").cloned();
+
     let posts = create_resource(
         cx,
-        || (),
-        move |_| crate::api::books::book_list(cx, None, None, None),
+        move || (search()),
+        move |q| crate::api::books::book_list(cx, None, None, q),
     );
 
     let g = move || match posts.read(cx) {

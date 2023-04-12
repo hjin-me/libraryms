@@ -10,24 +10,39 @@ pub async fn init(pg_pool: &PgPool, api_key: &str) -> Result<BookMS> {
     Ok(bms)
 }
 
-use crate::entity::{Book, BookState};
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
+use time::OffsetDateTime;
 use tracing::trace;
 
-#[derive(Debug, Serialize, Deserialize)]
-struct BookModel {
-    id: i64,
-    isbn: String,
-    title: String,
-    authors: Vec<String>,
-    publisher: String,
-    publish_date: String,
-    state: String,
-    log_id: i64,
-    thumbnail: String,
-    created_at: time::OffsetDateTime,
-    deleted_at: Option<time::OffsetDateTime>,
+#[derive(Debug, sqlx::FromRow, Clone)]
+pub struct BookModel {
+    pub id: i64,
+    pub isbn: Option<String>,
+    pub title: String,
+    pub authors: Vec<String>,
+    pub publisher: Option<String>,
+    pub publish_date: Option<String>,
+    pub state: BookStateModel,
+    pub log_id: i64,
+    pub thumbnail: Option<String>,
+    pub created_at: OffsetDateTime,
+    pub deleted_at: Option<OffsetDateTime>,
+
+    pub operator: String,
+    pub operator_name: String,
+    pub operate_at: OffsetDateTime,
+}
+#[derive(PartialEq, Debug, Clone, sqlx::Type)]
+#[sqlx(type_name = "text")]
+#[sqlx(rename_all = "lowercase")]
+pub enum BookStateModel {
+    Available,
+    Borrowed,
+    Returned,
+    Lost,
+    Deleted,
+    Unknown,
 }
 
 struct ChangeLogModel {
@@ -37,7 +52,7 @@ struct ChangeLogModel {
     source_type: String,
     state: String,
     action: String,
-    operate_at: time::OffsetDateTime,
+    operate_at: OffsetDateTime,
 }
 
 #[derive(Clone, Debug)]
@@ -59,87 +74,104 @@ impl BookMS {
             api_key: api_key.to_string(),
         }
     }
-    pub async fn get_one_by_id(&self, book_id: &i64) -> Result<Book, Box<dyn std::error::Error>> {
-        let row = sqlx::query(
-            "SELECT b.id,
-           b.isbn,
-           b.title,
-           b.authors,
-           b.publisher,
-           b.created_at,
-           b.state,
-           cl.operator,
-           a.display_name,
-           cl.operate_at,
-           b.thumbnail
+    pub async fn get_one_by_id(
+        &self,
+        book_id: &i64,
+    ) -> Result<BookModel, Box<dyn std::error::Error>> {
+        let book = sqlx::query_as!(
+            BookModel,
+            r#"SELECT b.id,
+       b.isbn,
+       b.title,
+       b.authors,
+       b.publisher,
+       b.created_at,
+       b.state as "state: BookStateModel",
+       cl.operator,
+       a.display_name as operator_name,
+       cl.operate_at,
+       b.thumbnail, b.deleted_at, b.log_id, b.publish_date
     FROM books b
              LEFT JOIN change_logs cl on b.log_id = cl.id
              LEFT JOIN accounts a on a.id = cl.operator
     WHERE b.id = $1
       AND b.deleted_at is null
     ORDER BY b.created_at desc
-    LIMIT 1",
+    LIMIT 1"#,
+            &book_id
         )
-        .bind(book_id)
         .fetch_one(&self.pg)
         .await?;
-        let book = Book {
-            id: row.get(0),
-            isbn: row.get(1),
-            title: row.get(2),
-            authors: row.get(3),
-            publisher: row.get(4),
-            import_at: row.get(5),
-            state: BookState::from_str(row.get(6)),
-            operator: row.get(7),
-            operator_name: row.get(8),
-            operate_at: row.get(9),
-            thumbnail: row.get(10),
-        };
+
         Ok(book)
     }
 
-    pub async fn list(&self, limit: &i64, offset: &i64) -> Result<Vec<Book>> {
-        let book_rows = sqlx::query(
-            "SELECT b.id,
+    // 获取图书列表
+    pub async fn list(
+        &self,
+        limit: &i64,
+        offset: &i64,
+        q: &Option<String>,
+    ) -> Result<Vec<BookModel>> {
+        let books: Vec<BookModel> = match q {
+            Some(q) => {
+                let q = format!("%{}%", q);
+                sqlx::query_as!(
+                    BookModel,
+                    r#"SELECT b.id,
        b.isbn,
        b.title,
        b.authors,
        b.publisher,
        b.created_at,
-       b.state,
+       b.state as "state: BookStateModel",
        cl.operator,
-       a.display_name,
+       a.display_name as operator_name,
        cl.operate_at,
-       b.thumbnail
+       b.thumbnail, b.deleted_at, b.log_id, b.publish_date
+FROM books b
+         LEFT JOIN change_logs cl on b.log_id = cl.id
+         LEFT JOIN accounts a on a.id = cl.operator
+WHERE b.deleted_at is null
+AND (b.title LIKE $3
+         OR b.isbn LIKE $3)
+ORDER BY b.created_at desc
+LIMIT $1 OFFSET $2"#,
+                    &limit,
+                    &offset,
+                    q
+                )
+                .fetch_all(&self.pg)
+                .await?
+            }
+            None => {
+                sqlx::query_as!(
+                    BookModel,
+                    r#"SELECT b.id,
+       b.isbn,
+       b.title,
+       b.authors,
+       b.publisher,
+       b.created_at,
+       b.state as "state: BookStateModel",
+       cl.operator,
+       a.display_name as operator_name,
+       cl.operate_at,
+       b.thumbnail, b.deleted_at, b.log_id, b.publish_date
 FROM books b
          LEFT JOIN change_logs cl on b.log_id = cl.id
          LEFT JOIN accounts a on a.id = cl.operator
 WHERE b.deleted_at is null
 ORDER BY b.created_at desc
-LIMIT $1 OFFSET $2 ",
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(&self.pg)
-        .await?;
+LIMIT $1 OFFSET $2"#,
+                    &limit,
+                    &offset
+                )
+                .fetch_all(&self.pg)
+                .await?
+            }
+        };
 
-        let books = book_rows
-            .iter()
-            .map(|row| Book {
-                id: row.get(0),
-                isbn: row.get(1),
-                title: row.get(2),
-                authors: row.get(3),
-                publisher: row.get(4),
-                import_at: row.get(5),
-                state: BookState::from_str(row.get(6)),
-                operator: row.get(7),
-                operator_name: row.get(8),
-                operate_at: row.get(9),
-                thumbnail: row.get(10),
-            })
-            .collect();
         Ok(books)
     }
     // pub async fn delete(&self, book_id: &i64, who: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -176,16 +208,20 @@ LIMIT $1 OFFSET $2 ",
         let isbn = get_book_by_isbn(isbn, &self.api_key).await?;
         let bk = BookModel {
             id: 0,
-            isbn: isbn.code.to_string(),
+            isbn: Some(isbn.code.to_string()),
             title: isbn.name.to_string(),
             authors: isbn.authors,
-            publisher: isbn.publishing.to_string(),
-            publish_date: isbn.published.to_string(),
+            publisher: Some(isbn.publishing.to_string()),
+            publish_date: Some(isbn.published.to_string()),
             log_id: 0,
-            thumbnail: isbn.photo_url.to_string(),
-            created_at: time::OffsetDateTime::now_utc(),
+            thumbnail: Some(isbn.photo_url.to_string()),
+            created_at: OffsetDateTime::now_utc(),
             deleted_at: None,
-            state: BookState::Available.to_string(),
+            state: BookStateModel::Available,
+
+            operator: "".to_string(),
+            operator_name: "".to_string(),
+            operate_at: OffsetDateTime::now_utc(),
         };
         let mut tc = self.pg.begin().await?;
         let bid:i64 = sqlx::query!(r#"INSERT INTO books (isbn, title, authors, publisher, publish_date, state, log_id, thumbnail, created_at)
@@ -194,7 +230,7 @@ RETURNING id
         "#,  bk.isbn, bk.title, &bk.authors,
             bk.publisher,
             bk.publish_date,
-            bk.state,
+            bk.state as _,
             bk.log_id,
             bk.thumbnail,
             bk.created_at).fetch_one(&mut tc).await?.id;
@@ -225,12 +261,12 @@ RETURNING id
         .await?
         .get(0);
 
-        sqlx::query(
+        sqlx::query!(
             "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and deleted_at is null",
+            BookStateModel::Borrowed as _,
+            oid,
+            book_id
         )
-        .bind(BookState::Borrowed.to_string())
-        .bind(oid)
-        .bind(book_id)
         .execute(&mut tc)
         .await?;
         tc.commit().await?;
@@ -248,17 +284,17 @@ RETURNING id
         .bind(book_id)
         .bind("book")
         .bind(format!("{} 归还书籍", who))
-        .bind(time::OffsetDateTime::now_utc())
+        .bind(OffsetDateTime::now_utc())
         .fetch_one(&mut tc)
         .await?
         .get(0);
 
-        sqlx::query(
+        sqlx::query!(
             "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and deleted_at is null",
+            BookStateModel::Returned as _,
+            oid,
+            book_id
         )
-        .bind(BookState::Returned.to_string())
-        .bind(oid)
-        .bind(book_id)
         .execute(&mut tc)
         .await?;
         tc.commit().await?;
@@ -276,16 +312,16 @@ RETURNING id
         .bind(book_id)
         .bind("book")
         .bind(format!("{} 确认书籍已经归还", who))
-        .bind(time::OffsetDateTime::now_utc())
+        .bind(OffsetDateTime::now_utc())
         .fetch_one(&mut tc)
         .await?
         .get(0);
-        sqlx::query(
+        sqlx::query!(
             "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and deleted_at is null",
+            BookStateModel::Available as _,
+            oid,
+            book_id
         )
-        .bind(BookState::Available.to_string())
-        .bind(oid)
-        .bind(book_id)
         .execute(&mut tc)
         .await?;
         tc.commit().await?;
@@ -446,7 +482,7 @@ mod test {
     #[tokio::test]
     async fn list() {
         let bms = new_bms().await.unwrap();
-        let books = bms.list(&10, &0).await.unwrap();
+        let books = bms.list(&10, &0, &None).await.unwrap();
     }
     #[tokio::test]
     async fn decode() {

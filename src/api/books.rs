@@ -1,5 +1,5 @@
 use crate::api::auth::{get_account, Role, UserSession};
-use crate::entity::{Book, BookState};
+use crate::api::entity::{Book, BookState};
 use leptos::ServerFnError::{Request, ServerError};
 use leptos::*;
 use serde::{Deserialize, Serialize};
@@ -39,10 +39,10 @@ pub async fn book_list(
     let limit = limit.unwrap_or(10);
     let offset = offset.unwrap_or(0);
     let ac = get_account(cx).await?;
-    dbg!(q);
+    // dbg!(q);
     let bms = crate::backend::books::BookMS::from_scope(cx);
     let books = bms
-        .list(&limit, &offset)
+        .list(&limit, &offset, &q)
         .await
         .map_err(|e| ServerError(e.to_string()))?
         .iter()
@@ -125,27 +125,27 @@ pub struct BookUI {
 }
 
 #[cfg(feature = "ssr")]
-impl From<Book> for BookUI {
-    fn from(value: Book) -> Self {
+impl From<crate::backend::books::BookModel> for BookUI {
+    fn from(value: crate::backend::books::BookModel) -> Self {
         Self {
             id: value.id,
-            isbn: value.isbn,
+            isbn: value.isbn.unwrap_or("".to_string()),
             title: value.title,
             authors: value.authors,
-            publisher: value.publisher,
-            import_at: value.import_at,
-            state: value.state,
+            publisher: value.publisher.unwrap_or("".to_string()),
+            import_at: value.created_at,
+            state: value.state.into(),
             operator: value.operator,
             operator_name: value.operator_name,
             operate_at: value.operate_at,
-            thumbnail: value.thumbnail,
+            thumbnail: value.thumbnail.unwrap_or("".to_string()),
             actions: vec![],
         }
     }
 }
 #[cfg(feature = "ssr")]
-impl From<&Book> for BookUI {
-    fn from(value: &Book) -> Self {
+impl From<&crate::backend::books::BookModel> for BookUI {
+    fn from(value: &crate::backend::books::BookModel) -> Self {
         Self::from(value.clone())
     }
 }

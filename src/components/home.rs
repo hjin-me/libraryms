@@ -44,6 +44,11 @@ pub fn Header(
     cx: Scope,
     action: Action<crate::api::auth::Login, Result<(), ServerFnError>>,
 ) -> impl IntoView {
+    // reactive access to URL query strings
+    let query = use_query_map(cx);
+    // search stored as ?q=
+    let search = move || query().get("q").cloned().unwrap_or_default();
+
     // let account = create_resource(cx, || {}, move async |_| { get_account(cx).await });
     let account = create_resource(
         cx,
@@ -95,13 +100,14 @@ pub fn Header(
           </div>
 
         <div class="flex items-center gap-4">
-
-        <form class="mb-0 hidden lg:flex">
+        <Form class="mb-0 hidden lg:flex" method="GET" action="">
           <div class="relative">
             <input
-              class="h-10 rounded-lg border-gray-200 pr-10 text-sm placeholder-gray-300 focus:z-10"
-              placeholder="Search..."
-              type="text"
+                class="h-10 rounded-lg border-gray-200 pr-10 text-sm placeholder-gray-300 focus:z-10"
+                placeholder="Search..."
+                type="search"
+                name="q"
+                value=search
             />
 
             <button
@@ -123,7 +129,7 @@ pub fn Header(
               </svg>
             </button>
           </div>
-        </form>
+        </Form>
       </div>
 
 

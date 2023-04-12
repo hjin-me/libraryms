@@ -47,6 +47,25 @@ impl BookState {
         }
     }
 }
+#[cfg(feature = "ssr")]
+impl From<crate::backend::books::BookStateModel> for BookState {
+    fn from(value: crate::backend::books::BookStateModel) -> Self {
+        match value {
+            crate::backend::books::BookStateModel::Available => BookState::Available,
+            crate::backend::books::BookStateModel::Borrowed => BookState::Borrowed,
+            crate::backend::books::BookStateModel::Returned => BookState::Returned,
+            crate::backend::books::BookStateModel::Lost => BookState::Lost,
+            crate::backend::books::BookStateModel::Deleted => BookState::Deleted,
+            crate::backend::books::BookStateModel::Unknown => BookState::Unknown,
+        }
+    }
+}
+#[cfg(feature = "ssr")]
+impl From<&crate::backend::books::BookStateModel> for BookState {
+    fn from(value: &crate::backend::books::BookStateModel) -> Self {
+        value.clone().into()
+    }
+}
 impl fmt::Display for BookState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.to_string())
