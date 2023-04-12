@@ -1,0 +1,379 @@
+{
+  "db": "PostgreSQL",
+  "07687487db704d0c74581bbda001e892e8fcadbbe57f2213d7643bc00368d47d": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          "TextArray",
+          "Text",
+          "Text",
+          "Text",
+          "Int8",
+          "Text",
+          "Timestamptz"
+        ]
+      }
+    },
+    "query": "INSERT INTO books (isbn, title, authors, publisher, publish_date, state, log_id, thumbnail, created_at)\nVALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\nRETURNING id\n        "
+  },
+  "196c8c3c86939a6930595b694e1b34b5e55c74a34b7a496ff56c5d7cd55d860c": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "isbn",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "title",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "authors",
+          "ordinal": 3,
+          "type_info": "TextArray"
+        },
+        {
+          "name": "publisher",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 5,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "state: BookStateModel",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "operator",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "operator_name",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "operate_at",
+          "ordinal": 9,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "thumbnail",
+          "ordinal": 10,
+          "type_info": "Text"
+        },
+        {
+          "name": "deleted_at",
+          "ordinal": 11,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "log_id",
+          "ordinal": 12,
+          "type_info": "Int8"
+        },
+        {
+          "name": "publish_date",
+          "ordinal": 13,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT b.id,\n       b.isbn,\n       b.title,\n       b.authors,\n       b.publisher,\n       b.created_at,\n       b.state as \"state: BookStateModel\",\n       cl.operator,\n       a.display_name as operator_name,\n       cl.operate_at,\n       b.thumbnail, b.deleted_at, b.log_id, b.publish_date\n    FROM books b\n             LEFT JOIN change_logs cl on b.log_id = cl.id\n             LEFT JOIN accounts a on a.id = cl.operator\n    WHERE b.id = $1\n      AND b.deleted_at is null\n    ORDER BY b.created_at desc\n    LIMIT 1"
+  },
+  "19cface4ef7f3d4fa4c0ed3490512bf96cd5a55fac5fca5f639ac5575cc3f39b": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "isbn",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "title",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "authors",
+          "ordinal": 3,
+          "type_info": "TextArray"
+        },
+        {
+          "name": "publisher",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 5,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "state: BookStateModel",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "operator",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "operator_name",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "operate_at",
+          "ordinal": 9,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "thumbnail",
+          "ordinal": 10,
+          "type_info": "Text"
+        },
+        {
+          "name": "deleted_at",
+          "ordinal": 11,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "log_id",
+          "ordinal": 12,
+          "type_info": "Int8"
+        },
+        {
+          "name": "publish_date",
+          "ordinal": 13,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8",
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT b.id,\n       b.isbn,\n       b.title,\n       b.authors,\n       b.publisher,\n       b.created_at,\n       b.state as \"state: BookStateModel\",\n       cl.operator,\n       a.display_name as operator_name,\n       cl.operate_at,\n       b.thumbnail, b.deleted_at, b.log_id, b.publish_date\nFROM books b\n         LEFT JOIN change_logs cl on b.log_id = cl.id\n         LEFT JOIN accounts a on a.id = cl.operator\nWHERE b.deleted_at is null\nAND (b.title LIKE $3\n         OR b.isbn LIKE $3)\nORDER BY b.created_at desc\nLIMIT $1 OFFSET $2"
+  },
+  "2cf920cb9713152f8d6ae56ca938b016c4d54f2c0619bf8b647eca6ebc7d4521": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "UPDATE books SET state = $1, log_id = $2 WHERE id = $3 and deleted_at is null"
+  },
+  "5520dbec988d6e24e67b6cb0d1df047b0a7c885d688851838654276ce1e74a56": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Int8",
+          "Text",
+          "Text",
+          "Timestamptz"
+        ]
+      }
+    },
+    "query": "INSERT INTO change_logs (operator, source_id, source_type, action, operate_at) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+  },
+  "9eb7fa11b511c7794c47bbf2694577aa65b807e521715bad6736918e2c1c976d": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "UPDATE books SET log_id = $1 WHERE id = $2"
+  },
+  "d61f7b0b41a22793354da3df913395ef291e1c5020f2d8af01c80efb71e76158": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "isbn",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "title",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "authors",
+          "ordinal": 3,
+          "type_info": "TextArray"
+        },
+        {
+          "name": "publisher",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 5,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "state: BookStateModel",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "operator",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "operator_name",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "operate_at",
+          "ordinal": 9,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "thumbnail",
+          "ordinal": 10,
+          "type_info": "Text"
+        },
+        {
+          "name": "deleted_at",
+          "ordinal": 11,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "log_id",
+          "ordinal": 12,
+          "type_info": "Int8"
+        },
+        {
+          "name": "publish_date",
+          "ordinal": 13,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT b.id,\n       b.isbn,\n       b.title,\n       b.authors,\n       b.publisher,\n       b.created_at,\n       b.state as \"state: BookStateModel\",\n       cl.operator,\n       a.display_name as operator_name,\n       cl.operate_at,\n       b.thumbnail, b.deleted_at, b.log_id, b.publish_date\nFROM books b\n         LEFT JOIN change_logs cl on b.log_id = cl.id\n         LEFT JOIN accounts a on a.id = cl.operator\nWHERE b.deleted_at is null\nORDER BY b.created_at desc\nLIMIT $1 OFFSET $2"
+  }
+}

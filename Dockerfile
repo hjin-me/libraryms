@@ -3,6 +3,7 @@ RUN apt-get update && apt-get install -y librust-clang-sys-dev
 ENV CARGO_HOME /build/.cargo
 WORKDIR /build
 COPY . .
+ENV SQLX_OFFLINE true
 RUN cargo build --target-dir /output --release
 
 # debian release as the same as golang image

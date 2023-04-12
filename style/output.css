@@ -849,6 +849,10 @@ select {
   width: 0px;
 }
 
+.w-12 {
+  width: 3rem;
+}
+
 .w-3 {
   width: 0.75rem;
 }
@@ -863,10 +867,6 @@ select {
 
 .w-full {
   width: 100%;
-}
-
-.w-12 {
-  width: 3rem;
 }
 
 .min-w-full {
@@ -923,10 +923,6 @@ select {
 
 .items-center {
   align-items: center;
-}
-
-.justify-start {
-  justify-content: flex-start;
 }
 
 .justify-end {
@@ -1142,6 +1138,10 @@ select {
      object-position: center;
 }
 
+.p-0 {
+  padding: 0px;
+}
+
 .p-2 {
   padding: 0.5rem;
 }
@@ -1152,10 +1152,6 @@ select {
 
 .p-4 {
   padding: 1rem;
-}
-
-.p-0 {
-  padding: 0px;
 }
 
 .px-12 {
@@ -1261,8 +1257,8 @@ select {
   font-weight: 500;
 }
 
-.leading-8 {
-  line-height: 2rem;
+.lowercase {
+  text-transform: lowercase;
 }
 
 .tracking-wide {
