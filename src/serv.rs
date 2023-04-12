@@ -84,7 +84,7 @@ pub async fn serv() {
     libraryms::api::register_server_functions();
 
     // build our application with a route
-    let app = Router::new()
+    let mut app = Router::new()
         .route("/liveness", get(|| async { "I'm alive!" }))
         .route("/readiness", get(|| async { "I'm ready!" }))
         .route(
@@ -108,11 +108,13 @@ pub async fn serv() {
         .layer(Extension(a_pg_pool))
         .layer(Extension(a_ldap_ident))
         .layer(Extension(a_bms));
-    // .layer(
-    //     ServiceBuilder::new()
-    //         .layer(TraceLayer::new_for_http())
-    //         .layer(CompressionLayer::new()),
-    // );
+    if conf.compress {
+        app = app.layer(
+            ServiceBuilder::new()
+                .layer(TraceLayer::new_for_http())
+                .layer(CompressionLayer::new()),
+        );
+    }
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`

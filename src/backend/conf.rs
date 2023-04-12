@@ -14,6 +14,8 @@ pub struct LDAP {
 pub struct Config {
     pub pg_dsn: String,
     pub session_secret: String,
+    #[serde(default)]
+    pub compress: bool,
     pub ldap: LDAP,
     pub isbn_api_key: String,
 }

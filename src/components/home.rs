@@ -23,7 +23,8 @@ pub fn BlogApp(cx: Scope) -> impl IntoView {
         // applies the `formatter` function to the `text` value
         formatter=formatter
       />
-      <Stylesheet href="/pkg/hj.css"/>
+      <Stylesheet href="/pkg/libraryms.css"/>
+
       <Router>
         <Header action=login_action />
         <main>
