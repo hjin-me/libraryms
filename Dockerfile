@@ -1,10 +1,9 @@
-FROM rust:latest as builder
-RUN apt-get update && apt-get install -y librust-clang-sys-dev
-ENV CARGO_HOME /build/.cargo
+FROM hjin/rust-nightly-wasm as builder
 WORKDIR /build
 COPY . .
 ENV SQLX_OFFLINE true
-RUN cargo build --target-dir /output --release
+RUN cargo install --locked cargo-leptos
+RUN cargo leptos build --release
 
 # debian release as the same as golang image
 # set TimeZone as Asia/Shanghai
@@ -21,5 +20,10 @@ RUN locale-gen zh_CN.UTF-8; \
 RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime;
 ENV TZ Asia/Shanghai
 ENV LANG zh_US.utf8
-COPY --from=builder /output/release/libraryms /usr/local/bin/libraryms
+COPY --from=builder /build/target/server/release/libraryms /usr/local/bin/libraryms
+COPY --from=builder /build/target/site /webser/www
+ENV LEPTOS_OUTPUT_NAME libraryms
+ENV LEPTOS_SITE_ROOT /webser/www
+ENV LEPTOS_SITE_ADDR 0.0.0.0:3000
+EXPOSE 3000
 ENTRYPOINT ["libraryms"]
