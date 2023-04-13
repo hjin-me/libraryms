@@ -1,3 +1,4 @@
+use anyhow::Result;
 use serde::Deserialize;
 use std::fs;
 
@@ -20,20 +21,8 @@ pub struct Config {
     pub isbn_api_key: String,
 }
 
-#[cfg(feature = "ssr")]
-use once_cell::sync::OnceCell;
-#[cfg(feature = "ssr")]
-use std::sync::Arc;
-#[cfg(feature = "ssr")]
-static INSTANCE: OnceCell<Arc<Config>> = OnceCell::new();
-
-pub fn parse_conf(p: &str) -> Config {
-    let contents = fs::read_to_string(&p).expect("Should have been able to read the file");
-    let conf: Config = toml::from_str(contents.as_str()).unwrap();
-    INSTANCE.set(Arc::new(conf.clone())).unwrap();
-    conf
-}
-
-pub fn get_conf() -> Arc<Config> {
-    INSTANCE.get().unwrap().clone()
+pub fn parse_conf(p: &str) -> Result<Config> {
+    let contents = fs::read_to_string(&p)?;
+    let conf: Config = toml::from_str(contents.as_str())?;
+    Ok(conf)
 }

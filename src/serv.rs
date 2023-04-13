@@ -11,7 +11,7 @@ use clap::Parser;
 use leptos::*;
 use leptos_axum::{generate_route_list, handle_server_fns_with_context, LeptosRoutes};
 use libraryms::backend::books::BookMS;
-use libraryms::backend::conf::{get_conf, parse_conf};
+use libraryms::backend::conf::parse_conf;
 use libraryms::backend::ldap::LdapIdent;
 use libraryms::components::home::*;
 use libraryms::fallback::file_and_error_handler;
@@ -46,7 +46,7 @@ pub async fn serv() {
     // get pwd
     let pwd = std::env::current_dir().unwrap();
     info!("Starting up {}, {:?}", &args.config, pwd);
-    parse_conf(&args.config);
+    let server_conf = parse_conf(&args.config).expect("解析配置文件失败");
 
     // Setting this to None means we'll be using cargo-leptos and its env vars
     let conf = get_configuration(None).await.unwrap();
@@ -54,16 +54,17 @@ pub async fn serv() {
     let addr = leptos_options.site_addr;
     let routes = generate_route_list(|cx| view! { cx, <BlogApp/> }).await;
 
-    let conf = get_conf();
-    let pg_pool = libraryms::backend::db::init(&conf.pg_dsn)
+    let pg_pool = libraryms::backend::db::init(&server_conf.pg_dsn)
         .await
         .expect("连接数据库失败");
 
     let ldap_ident = libraryms::backend::ldap::init(
-        &conf.ldap.url,
-        &conf.ldap.base,
-        &conf.ldap.attr,
-        if let (Some(bind_dn), Some(bind_pw)) = (&conf.ldap.bind_dn, &conf.ldap.bind_pw) {
+        &server_conf.ldap.url,
+        &server_conf.ldap.base,
+        &server_conf.ldap.attr,
+        if let (Some(bind_dn), Some(bind_pw)) =
+            (&server_conf.ldap.bind_dn, &server_conf.ldap.bind_pw)
+        {
             Some((bind_dn.clone(), bind_pw.clone()))
         } else {
             None
@@ -71,7 +72,7 @@ pub async fn serv() {
     )
     .await
     .unwrap();
-    let bms = libraryms::backend::books::init(&pg_pool, &conf.isbn_api_key)
+    let bms = libraryms::backend::books::init(&pg_pool, &server_conf.isbn_api_key)
         .await
         .expect("图书管理模块初始化失败");
     let a_ldap_ident = Arc::new(ldap_ident);
@@ -80,6 +81,7 @@ pub async fn serv() {
     let l_ldap_ident = a_ldap_ident.clone();
     let l_bms = a_bms.clone();
     let l_pg_pool = a_pg_pool.clone();
+    let l_server_conf = Arc::new(server_conf.clone());
 
     libraryms::api::register_server_functions();
 
@@ -98,6 +100,7 @@ pub async fn serv() {
                 provide_context(cx, l_bms.clone());
                 provide_context(cx, l_ldap_ident.clone());
                 provide_context(cx, l_pg_pool.clone());
+                provide_context(cx, l_server_conf.clone());
             },
             |cx| {
                 view! { cx, <BlogApp/> }
@@ -105,10 +108,11 @@ pub async fn serv() {
         )
         .fallback(file_and_error_handler)
         .layer(Extension(Arc::new(leptos_options)))
+        .layer(Extension(Arc::new(server_conf.clone())))
         .layer(Extension(a_pg_pool))
         .layer(Extension(a_ldap_ident))
         .layer(Extension(a_bms));
-    if conf.compress {
+    if server_conf.compress {
         app = app.layer(
             ServiceBuilder::new()
                 .layer(TraceLayer::new_for_http())
@@ -129,6 +133,7 @@ async fn server_fn_handler(
     Extension(pool): Extension<Arc<PgPool>>,
     Extension(bms): Extension<Arc<BookMS>>,
     Extension(ldap_ident): Extension<Arc<LdapIdent>>,
+    Extension(server_conf): Extension<Arc<libraryms::backend::conf::Config>>,
     path: Path<String>,
     headers: HeaderMap,
     // raw_query: RawQuery,
@@ -143,6 +148,7 @@ async fn server_fn_handler(
             provide_context(cx, bms.clone());
             provide_context(cx, pool.clone());
             provide_context(cx, ldap_ident.clone());
+            provide_context(cx, server_conf.clone());
         },
         request,
     )

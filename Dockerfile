@@ -1,8 +1,7 @@
-FROM hjin/rust-nightly-wasm as builder
+FROM hjin/leptos-build as builder
 WORKDIR /build
 COPY . .
 ENV SQLX_OFFLINE true
-RUN cargo install --locked cargo-leptos
 RUN cargo leptos build --release
 
 # debian release as the same as golang image

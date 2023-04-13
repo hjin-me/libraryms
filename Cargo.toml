@@ -9,43 +9,41 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 anyhow = "1.0.66"
-console_log = "1.0.0"
 console_error_panic_hook = "0.1.7"
 futures = "0.3.25"
 cfg-if = "1.0.0"
 leptos = { version = "0.2.4", default-features = false, features = ["serde"] }
-leptos_axum = { version = "0.2.4", default-features = false, optional = true }
+leptos_axum = { optional = true, version = "0.2.4", default-features = false }
 leptos_meta = { version = "0.2.4", default-features = false }
 leptos_router = { version = "0.2.4", default-features = false }
 leptos_reactive = { version = "0.2.4", default-features = false }
 serde = { version = "1.0.148", features = ["derive"] }
 serde_json = "1.0.89"
-gloo-net = { version = "0.2.5", features = ["http"] }
-reqwest = { version = "0.11.13", features = ["json"] }
-axum = { version = "0.6.1", features = ["http2", "macros", "headers"], optional = true }
-tower = { version = "0.4.13", optional = true }
-tower-http = { version = "0.4.0", features = ["fs", "trace", "compression-full", "async-compression"], optional = true }
-tokio = { version = "1.22.0", features = ["full"], optional = true }
+reqwest = { optional = true, version = "0.11.13", features = ["json"] }
+axum = { optional = true, version = "0.6.1", features = ["http2", "macros", "headers"] }
+tower = { optional = true, version = "0.4.13" }
+tower-http = { optional = true, version = "0.4.0", features = ["fs", "trace", "compression-gzip", "compression-deflate", "compression-zstd", "async-compression"] }
+tokio = { optional = true, version = "1.22.0", features = ["full"] }
 http = { version = "0.2.8" }
 thiserror = "1.0.38"
 wasm-bindgen = "0.2"
-once_cell = { version = "1.17.1", optional = true }
 time = { version = "0.3.19", features = ["formatting", "parsing", "macros", "serde-human-readable"] }
-toml = { version = "0.7.2", optional = true }
-clap = { version = "4.1.6", features = ["derive", "error-context", "help", "std", "suggestions", "usage"] }
+toml = { optional = true, version = "0.7.2" }
+clap = { optional = true, version = "4.1.6", features = ["derive", "error-context", "help", "std", "suggestions", "usage"] }
 tracing = { version = "0.1.37" }
-tracing-subscriber = { version = "0.3.16" }
+tracing-subscriber = { optional = true, version = "0.3.16" }
 lazy_static = "1.4.0"
-sqlx = { version = "0.6.3", features = ["time", "postgres", "offline", "uuid", "runtime-tokio-native-tls", "json", "macros"], optional = true }
-ldap3 = { version = "0.11.1", optional = true }
-jsonwebtoken = { version = "8.3.0", optional = true, default-features = false }
-cookie = { version = "0.17.0", optional = true }
+sqlx = { optional = true, version = "0.6.3", features = ["time", "postgres", "offline", "uuid", "runtime-tokio-native-tls", "json", "macros"] }
+ldap3 = { optional = true, version = "0.11.1" }
+jsonwebtoken = { optional = true, version = "8.3.0", default-features = false }
+cookie = { optional = true, version = "0.17.0" }
+tracing-wasm = "0.2.1"
 
 [features]
 default = ["csr"]
 csr = ["leptos/csr", "leptos_meta/csr", "leptos_router/csr"]
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]
-ssr = ["dep:axum", "dep:tower", "dep:tower-http", "dep:tokio", "leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:leptos_axum", "dep:once_cell", "dep:toml", "dep:sqlx", "dep:ldap3", "dep:jsonwebtoken", "dep:cookie"]
+ssr = ["dep:axum", "dep:tower", "dep:tower-http", "dep:tokio", "leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:leptos_axum", "dep:toml", "dep:sqlx", "dep:ldap3", "dep:jsonwebtoken", "dep:cookie", "dep:reqwest", "dep:clap", "dep:tracing-subscriber"]
 
 [package.metadata.cargo-all-features]
 denylist = ["axum", "tower", "tower-http", "tokio", "leptos_axum"]

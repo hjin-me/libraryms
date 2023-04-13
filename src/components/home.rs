@@ -185,7 +185,7 @@ pub fn Header(
 #[component]
 pub fn DefaultPage(cx: Scope) -> impl IntoView {
     view! {
-            cx,
-            <BookGallery />
+        cx,
+        <BookGallery />
     }
 }

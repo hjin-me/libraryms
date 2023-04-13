@@ -1,4 +1,4 @@
-use crate::backend::conf::get_conf;
+use crate::backend::conf::Config;
 use cookie::Cookie;
 use jsonwebtoken::{decode, DecodingKey, EncodingKey, Validation};
 use leptos_reactive::use_context;
@@ -44,7 +44,10 @@ pub async fn account_info_from_cookies(cx: leptos::Scope) -> Option<AccountInfo>
     .to_string();
     debug!("token: {:?}", &token);
 
-    let conf = get_conf();
+    let conf = match use_context::<Config>(cx) {
+        Some(rp) => rp,
+        None => return None,
+    };
     debug!("conf: {:?}", &conf);
     let pool = match crate::backend::db::from_scope(cx) {
         Ok(pool) => pool,
@@ -89,15 +92,16 @@ pub async fn try_add_new_account(
     .await?;
     Ok(())
 }
-pub fn set_account_info(cx: leptos::Scope, sub: &str) {
-    let conf = get_conf();
+pub fn set_account_info(cx: leptos::Scope, sub: &str) -> anyhow::Result<()> {
+    let conf = use_context::<Config>(cx).ok_or(anyhow::anyhow!("配置文件不存在"))?;
     let token = gen_access_token(conf.session_secret.as_bytes(), sub);
     let mut c = Cookie::new(COOKIE_NAME, token);
     c.set_max_age(time::Duration::days(7));
     c.set_path("/");
     if let Some(r) = use_context::<leptos_axum::ResponseOptions>(cx) {
-        r.insert_header(http::header::SET_COOKIE, c.to_string().parse().unwrap())
+        r.insert_header(http::header::SET_COOKIE, c.to_string().parse()?)
     };
+    Ok(())
 }
 
 pub fn gen_access_token(secret: &[u8], sub: &str) -> String {

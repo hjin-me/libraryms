@@ -1,5 +1,5 @@
 use crate::api::auth::{get_account, Role, UserSession};
-use crate::api::entity::{Book, BookState};
+use crate::api::entity::BookState;
 use leptos::ServerFnError::{Request, ServerError};
 use leptos::*;
 use serde::{Deserialize, Serialize};

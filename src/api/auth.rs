@@ -18,7 +18,8 @@ pub async fn login(cx: Scope, username: String, password: String) -> Result<(), 
     crate::backend::auth::try_add_new_account(cx, &r.uid, &r.display_name)
         .await
         .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
-    crate::backend::auth::set_account_info(cx, &r.uid);
+    crate::backend::auth::set_account_info(cx, &r.uid)
+        .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
     leptos_axum::redirect(cx, "/assets-mgr");
     return Ok(());
 }
