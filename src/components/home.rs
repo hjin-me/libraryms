@@ -1,10 +1,12 @@
 use crate::components::assets::*;
 use crate::components::auth::*;
 use crate::components::book::*;
+use crate::components::book_gallery::*;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::SsrMode::InOrder;
 use leptos_router::*;
+use tracing::{info, trace};
 
 #[allow(non_snake_case)]
 #[component]
@@ -45,11 +47,6 @@ pub fn Header(
     cx: Scope,
     action: Action<crate::api::auth::Login, Result<(), ServerFnError>>,
 ) -> impl IntoView {
-    // reactive access to URL query strings
-    let query = use_query_map(cx);
-    // search stored as ?q=
-    let search = move || query().get("q").cloned().unwrap_or_default();
-
     // let account = create_resource(cx, || {}, move async |_| { get_account(cx).await });
     let account = create_resource(
         cx,
@@ -100,38 +97,12 @@ pub fn Header(
             </button>
           </div>
 
-        <div class="flex items-center gap-4">
-        <Form class="mb-0 hidden lg:flex" method="GET" action="">
-          <div class="relative">
-            <input
-                class="h-10 rounded-lg border-gray-200 pr-10 text-sm placeholder-gray-300 focus:z-10"
-                placeholder="Search..."
-                type="search"
-                name="q"
-                value=search
-            />
-
-            <button
-              type="submit"
-              class="absolute inset-y-0 right-0 rounded-r-lg p-2 text-gray-600"
-            >
-              <span class="sr-only">"Submit Search"</span>
-              <svg
-                class="h-5 w-5"
-                fill="currentColor"
-                viewbox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  clip-rule="evenodd"
-                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                  fill-rule="evenodd"
-                ></path>
-              </svg>
-            </button>
-          </div>
-        </Form>
-      </div>
+        <div class="flex lg:w-0 lg:flex-1">
+            <a href="/" class="">
+            <span class="sr-only">"图书馆"</span>
+            <img loading="lazy" referrerpolicy="no-referrer" src="/logo-light.png" class="h-8 object-contain object-center" />
+            </a>
+        </div>
 
 
         <div class="flex w-0 flex-1 justify-end lg:hidden">
@@ -150,11 +121,11 @@ pub fn Header(
             ></path>
           </svg>
         </button>
-      </div>
+        </div>
 
         <nav
         aria-label="Site Nav"
-        class="hidden items-center justify-center gap-8 text-sm font-medium lg:flex lg:w-0 lg:flex-1"
+        class="hidden items-start justify-start gap-8 text-sm font-medium lg:flex lg:w-0 lg:flex-1"
       >
         <A class="text-gray-900" href="/">"图书馆"</A>
         <A class="text-gray-900" href="/my">"我的借阅"</A>
@@ -184,8 +155,77 @@ pub fn Header(
 #[allow(non_snake_case)]
 #[component]
 pub fn DefaultPage(cx: Scope) -> impl IntoView {
+    let query = use_query_map(cx);
+    let search_filter = move || query.with(|q| q.get("q").cloned());
+
+    let books = create_resource(
+        cx,
+        // move || (query().get("q").cloned()),
+        search_filter,
+        move |q| async move {
+            trace!("default query: {:?}", q);
+            crate::api::books::book_list(cx, None, None, q).await
+        },
+    );
+
     view! {
         cx,
-        <BookGallery />
+        <Suspense fallback=move || view! { cx,
+            <div class="mx-auto max-w-2xl px-4 my-4 lg:max-w-7xl">
+            <p>"Loading..."</p>
+            </div>}.into_any()>
+            <div class="mx-auto max-w-screen-xl px-4 my-4 gap-8">
+                <div class="my-4" >
+                    <div class="flex items-center gap-4">
+        <Form class="mb-0 hidden lg:flex" method="GET" action="">
+          <div class="relative">
+            <input
+                class="h-10 rounded-lg border-gray-200 pr-10 text-sm placeholder-gray-300 focus:z-10"
+                placeholder="搜索..."
+                type="search"
+                name="q"
+                value=search_filter
+            />
+
+            <button
+              type="submit"
+              class="absolute inset-y-0 right-0 rounded-r-lg p-2 text-gray-600"
+            >
+              <span class="sr-only">"Submit Search"</span>
+              <svg
+                class="h-5 w-5"
+                fill="currentColor"
+                viewbox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  clip-rule="evenodd"
+                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                  fill-rule="evenodd"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </Form>
+      </div>
+
+                </div>
+            </div>
+        {move || {
+            books.read(cx)
+                .map(|a| {
+                match a {
+                    Ok(books) => view! {
+                        cx,
+                        <BookGallery books=books />
+                    }.into_view(cx),
+                    Err(e) => view! {
+                        cx,
+                        <p>{format!("Error: {}", e)}</p>
+                    }.into_view(cx)
+                }
+            })
+        }}
+        </Suspense>
     }
 }
