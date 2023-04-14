@@ -31,11 +31,11 @@ pub fn BlogApp(cx: Scope) -> impl IntoView {
         <Header action=login_action />
         <main>
         <Routes>
-        <Route path="" view=|cx| view! {cx,<DefaultPage/>} ssr=InOrder/>
-        <Route path="book/:id" view=|cx| view! {cx,<BookDetailPage/>} ssr=InOrder/>
-        <Route path="assets-mgr" view=|cx| view! {cx,<AssetsPage/>} ssr=InOrder/>
-        <Route path="login" view= move |cx| view! {cx,<LoginPage action=login_action/>} ssr=InOrder />
-        <Route path="my" view= move |cx| view! {cx,<div>"My"</div>} ssr=InOrder />
+        <Route path="" view=|cx| view! {cx,<DefaultPage/>}/>
+        <Route path="book/:id" view=|cx| view! {cx,<BookDetailPage/>}/>
+        <Route path="assets-mgr" view=|cx| view! {cx,<AssetsPage/>}/>
+        <Route path="login" view= move |cx| view! {cx,<LoginPage action=login_action/>}/>
+        <Route path="my" view= move |cx| view! {cx,<div>"My"</div>}/>
         </Routes>
         </main>
       </Router>
