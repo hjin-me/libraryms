@@ -8,8 +8,8 @@ pub fn LoginPage(
     action: Action<crate::api::auth::Login, Result<(), ServerFnError>>,
 ) -> impl IntoView {
     view! {
-            cx,
-            <div class="mx-auto max-w-screen-xl px-4 py-16 sm:px-6 lg:px-8">
+        cx,
+        <div class="mx-auto max-w-screen-xl px-4 py-16 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-lg">
         <h1 class="text-center text-2xl font-bold text-indigo-600 sm:text-3xl">
           "开始学习每一天"

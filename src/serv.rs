@@ -81,7 +81,7 @@ pub async fn serv() {
     let l_ldap_ident = a_ldap_ident.clone();
     let l_bms = a_bms.clone();
     let l_pg_pool = a_pg_pool.clone();
-    let l_server_conf = Arc::new(server_conf.clone());
+    let l_server_conf = server_conf.clone();
 
     libraryms::api::register_server_functions();
 
@@ -108,7 +108,7 @@ pub async fn serv() {
         )
         .fallback(file_and_error_handler)
         .layer(Extension(Arc::new(leptos_options)))
-        .layer(Extension(Arc::new(server_conf.clone())))
+        .layer(Extension(server_conf.clone()))
         .layer(Extension(a_pg_pool))
         .layer(Extension(a_ldap_ident))
         .layer(Extension(a_bms));
@@ -133,7 +133,7 @@ async fn server_fn_handler(
     Extension(pool): Extension<Arc<PgPool>>,
     Extension(bms): Extension<Arc<BookMS>>,
     Extension(ldap_ident): Extension<Arc<LdapIdent>>,
-    Extension(server_conf): Extension<Arc<libraryms::backend::conf::Config>>,
+    Extension(server_conf): Extension<libraryms::backend::conf::Config>,
     path: Path<String>,
     headers: HeaderMap,
     // raw_query: RawQuery,
